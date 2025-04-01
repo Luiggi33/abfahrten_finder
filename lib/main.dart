@@ -214,11 +214,6 @@ class Products {
       'regional': regional,
     };
   }
-
-  @override
-  String toString() {
-    return "S-Bahn: ${suburban ? "Ja" : "Nein"}\nU-Bahn: ${subway ? "Ja" : "Nein"}\nTram: ${tram ? "Ja" : "Nein"}\nBus: ${bus ? "Ja" : "Nein"}\nFähre ${ferry ? "Ja" : "Nein"}";
-  }
 }
 
 class Line {
