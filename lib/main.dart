@@ -75,6 +75,20 @@ Future<Position> _determinePosition() async {
   return await Geolocator.getCurrentPosition();
 }
 
+String trimZero(double num) {
+  String tmp = num.toString();
+  if (!tmp.contains('.')) {
+    return tmp;
+  }
+  while (tmp.endsWith('0')) {
+    tmp = tmp.substring(0, tmp.length - 1);
+  }
+  if (tmp.endsWith('.')) {
+    tmp = tmp.substring(0, tmp.length - 1);
+  }
+  return tmp;
+}
+
 class Trip {
   final String tripId;
   final TripStop stop;
@@ -717,7 +731,11 @@ class _ConnectionsState extends State<Connections> {
                               : "assets/product/placeholder.png"
                       ),
                       title: Text(widget.stop.products.toMap()[widget.product]!),
-                      subtitle: Text("Nach ${trip.provenance} um ${DateFormat("HH:mm").format(trip.getPlannedDateTime()!.toLocal())} ${trip.delay != null ? "(${trip.delay})" : ""} Uhr"),
+                      subtitle: Text(
+                          "Nach ${trip.provenance} um ${DateFormat("HH:mm").format(trip.getPlannedDateTime()!.toLocal())} "
+                              "${trip.delay != null && trip.delay != 0 ? "(${trip.delay!.isNegative ? '' : '+'}${trimZero(trip.delay! / 60)}) " : ""}"
+                              "Uhr"
+                      ),
                     ),
                   );
                 },
