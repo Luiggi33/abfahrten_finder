@@ -59,6 +59,8 @@ android {
         }
         debug {
             signingConfig = signingConfigs.getByName("debug")
+            applicationIdSuffix = ".debug"
+            resValue("string", "app_name", "Abfahrt Finder - Debug")
         }
     }
 }
