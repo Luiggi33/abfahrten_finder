@@ -717,8 +717,7 @@ class _ConnectionsState extends State<Connections> {
                               : "assets/product/placeholder.png"
                       ),
                       title: Text(widget.stop.products.toMap()[widget.product]!),
-                      subtitle: Text("Nach ${trip.provenance} um ${DateFormat("HH:mm").format(trip
-                          .getActualDateTime()!.toLocal())} Uhr"),
+                      subtitle: Text("Nach ${trip.provenance} um ${DateFormat("HH:mm").format(trip.getPlannedDateTime()!.toLocal())} ${trip.delay != null ? "($trip.delay)" : ""} Uhr"),
                     ),
                   );
                 },
