@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:intl/find_locale.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -718,8 +717,8 @@ class _ConnectionsState extends State<Connections> {
                               : "assets/product/placeholder.png"
                       ),
                       title: Text(widget.stop.products.toMap()[widget.product]!),
-                      subtitle: Text("To ${trip.provenance} at ${DateFormat("HH:mm").format(trip
-                          .getActualDateTime()!.toLocal())}"),
+                      subtitle: Text("Nach ${trip.provenance} um ${DateFormat("HH:mm").format(trip
+                          .getActualDateTime()!.toLocal())} Uhr"),
                     ),
                   );
                 },
