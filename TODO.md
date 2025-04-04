@@ -1,0 +1,3 @@
+- [ ] Cache HTTP Requests clientside
+- [ ] Actual UI Design lol
+- [ ] Fix base logo?
