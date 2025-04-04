@@ -871,7 +871,13 @@ class _AbfahrtenScreenState extends State<AbfahrtenScreen> {
         children: <Widget>[
           if (futureStops.isEmpty)
             Expanded(
-              child: Text("Drücke den Knopf um Stops in der Nähe zu finden", style: TextStyle(fontSize: 20)),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  Text("Drücke den Knopf um Stops in der Nähe zu finden", style: TextStyle(fontSize: 20), textAlign: TextAlign.center,)
+                ]
+              )
             )
           else
             Expanded(
