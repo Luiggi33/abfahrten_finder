@@ -34,31 +34,16 @@ Future<List<TransitStop>> fetchBVGStopData(double latitude, double longitude, in
   }
 }
 
-Future<MinimalTrip> fetchBVGTripData(String tripID) async {
-  final response = await http.get(Uri.parse("https://v6.vbb.transport.rest/trips/${Uri.encodeFull(tripID)}?stopovers=false&remarks=false"));
-  if (response.statusCode == 200) {
-    return MinimalTrip.fromJson(jsonDecode(response.body)["trip"] as Map<String, dynamic>);
-  } else {
-    throw Exception("Failed to fetch BVG trip data");
-  }
-}
-
 Future<List<Trip>> fetchBVGArrivalData(int stopID, int duration, int results) async {
   final response = await http.get(
     Uri.parse(
-        "https://v6.vbb.transport.rest/stops/$stopID/arrivals?duration=$duration&results=$results"
+        "https://v6.vbb.transport.rest/stops/$stopID/departures?duration=$duration&results=$results"
     )
   );
 
   if (response.statusCode == 200) {
-    List<dynamic> parsed = jsonDecode(response.body)["arrivals"];
+    List<dynamic> parsed = jsonDecode(response.body)["departures"];
     List<Trip> trips = parsed.map<Trip>((json) => Trip.fromJson(json)).toList();
-    for (var i = 0; i < trips.length; i++) {
-      var currentElement = trips[i];
-      final tripData = await fetchBVGTripData(currentElement.tripId);
-      currentElement.direction = tripData.direction;
-      currentElement.destination = tripData.destination;
-    }
     return trips;
   } else {
     throw Exception("Failed to load BVG arrival data");
@@ -105,23 +90,6 @@ String trimZero(double num) {
   return tmp;
 }
 
-class MinimalTrip {
-  final Destination destination;
-  final String direction;
-
-  MinimalTrip({
-    required this.destination,
-    required this.direction,
-  });
-
-  factory MinimalTrip.fromJson(Map<String, dynamic> json) {
-    return MinimalTrip(
-      destination: Destination.fromJson(json['destination']),
-      direction: json['direction']
-    );
-  }
-}
-
 class Destination {
   final String type;
   final String id;
@@ -159,30 +127,6 @@ class Destination {
       'products': products.toJson(),
       'stationDHID': stationDHID,
     };
-  }
-}
-
-
-class MinimalLocation {
-  final String type;
-  final String id;
-  final double latitude;
-  final double longitude;
-
-  MinimalLocation({
-    required this.type,
-    required this.id,
-    required this.latitude,
-    required this.longitude,
-  });
-
-  factory MinimalLocation.fromJson(Map<String, dynamic> json) {
-    return MinimalLocation(
-      type: json['type'],
-      id: json['id'],
-      latitude: json['latitude'],
-      longitude: json['longitude'],
-    );
   }
 }
 
@@ -829,33 +773,8 @@ class _ConnectionsState extends State<Connections> {
                       ),
                       title: Text("${trip.line.name}${trip.direction != null ? " nach ${trip.direction}" : ""}"),
                       subtitle: Text(
-                          "Um ${DateFormat("HH:mm").format(trip.getPlannedDateTime()!.toLocal())} "
-                              "${trip.delay != null && trip.delay != 0 ? "(${trip.delay!.isNegative ? '' : '+'}${trimZero(trip.delay! / 60)}) " : ""}"
-                              "Uhr"
+                          "Um ${DateFormat("HH:mm").format(trip.getPlannedDateTime()!.toLocal())} Uhr${trip.delay != null && trip.delay != 0 ? " (${trip.delay!.isNegative ? '' : '+'}${trimZero(trip.delay! / 60)} Mins.) " : ""}"
                       ),
-                      onTap: () {
-                        showModalBottomSheet<void>(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return SizedBox(
-                              height: 200,
-                              child: Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: <Widget>[
-                                    const Text("Test"),
-                                    ElevatedButton(
-                                      child: const Text('Close BottomSheet'),
-                                      onPressed: () => Navigator.pop(context),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      },
                     ),
                   );
                 },
