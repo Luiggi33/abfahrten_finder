@@ -22,7 +22,7 @@ const Map<String, String> productImage = {
 Future<List<TransitStop>> fetchBVGStopData(double latitude, double longitude, int maxDistance) async {
   final response = await http.get(
     Uri.parse(
-      "https://v6.bvg.transport.rest/locations/nearby?latitude=$latitude&longitude=$longitude&linesOfStops=true",
+      "https://v6.vbb.transport.rest/locations/nearby?latitude=$latitude&longitude=$longitude&linesOfStops=true",
     ),
   );
 
@@ -34,16 +34,32 @@ Future<List<TransitStop>> fetchBVGStopData(double latitude, double longitude, in
   }
 }
 
+Future<MinimalTrip> fetchBVGTripData(String tripID) async {
+  final response = await http.get(Uri.parse("https://v6.vbb.transport.rest/trips/${Uri.encodeFull(tripID)}?stopovers=false&remarks=false"));
+  if (response.statusCode == 200) {
+    return MinimalTrip.fromJson(jsonDecode(response.body)["trip"] as Map<String, dynamic>);
+  } else {
+    throw Exception("Failed to fetch BVG trip data");
+  }
+}
+
 Future<List<Trip>> fetchBVGArrivalData(int stopID, int duration, int results) async {
   final response = await http.get(
     Uri.parse(
-      "https://v6.bvg.transport.rest/stops/$stopID/arrivals?duration=$duration&results=$results"
-    ),
+        "https://v6.vbb.transport.rest/stops/$stopID/arrivals?duration=$duration&results=$results"
+    )
   );
 
   if (response.statusCode == 200) {
     List<dynamic> parsed = jsonDecode(response.body)["arrivals"];
-    return parsed.map<Trip>((json) => Trip.fromJson(json)).toList();
+    List<Trip> trips = parsed.map<Trip>((json) => Trip.fromJson(json)).toList();
+    for (var i = 0; i < trips.length; i++) {
+      var currentElement = trips[i];
+      final tripData = await fetchBVGTripData(currentElement.tripId);
+      currentElement.direction = tripData.direction;
+      currentElement.destination = tripData.destination;
+    }
+    return trips;
   } else {
     throw Exception("Failed to load BVG arrival data");
   }
@@ -89,6 +105,87 @@ String trimZero(double num) {
   return tmp;
 }
 
+class MinimalTrip {
+  final Destination destination;
+  final String direction;
+
+  MinimalTrip({
+    required this.destination,
+    required this.direction,
+  });
+
+  factory MinimalTrip.fromJson(Map<String, dynamic> json) {
+    return MinimalTrip(
+      destination: Destination.fromJson(json['destination']),
+      direction: json['direction']
+    );
+  }
+}
+
+class Destination {
+  final String type;
+  final String id;
+  final String name;
+  final Location location;
+  final Products products;
+  final String stationDHID;
+
+  Destination({
+    required this.type,
+    required this.id,
+    required this.name,
+    required this.location,
+    required this.products,
+    required this.stationDHID,
+  });
+
+  factory Destination.fromJson(Map<String, dynamic> json) {
+    return Destination(
+      type: json['type'],
+      id: json['id'],
+      name: json['name'],
+      location: Location.fromJson(json['location']),
+      products: Products.fromJson(json['products']),
+      stationDHID: json['stationDHID'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'type': type,
+      'id': id,
+      'name': name,
+      'location': location.toJson(),
+      'products': products.toJson(),
+      'stationDHID': stationDHID,
+    };
+  }
+}
+
+
+class MinimalLocation {
+  final String type;
+  final String id;
+  final double latitude;
+  final double longitude;
+
+  MinimalLocation({
+    required this.type,
+    required this.id,
+    required this.latitude,
+    required this.longitude,
+  });
+
+  factory MinimalLocation.fromJson(Map<String, dynamic> json) {
+    return MinimalLocation(
+      type: json['type'],
+      id: json['id'],
+      latitude: json['latitude'],
+      longitude: json['longitude'],
+    );
+  }
+}
+
 class Trip {
   final String tripId;
   final TripStop stop;
@@ -100,12 +197,12 @@ class Trip {
   final String? plannedPlatform;
   final String? prognosedPlatform;
   final String? prognosisType;
-  final String? direction;
+  late String? direction;
   final String? provenance;
   final Line line;
   final List<Remark> remarks;
   final TripStop? origin;
-  final TripStop? destination;
+  late Destination? destination;
   final bool cancelled;
 
   Trip({
@@ -152,7 +249,7 @@ class Trip {
       line: Line.fromJson(json['line']),
       remarks: remarksList,
       origin: json['origin'] != null ? TripStop.fromJson(json['origin']) : null,
-      destination: json['destination'] != null ? TripStop.fromJson(json['destination']) : null,
+      destination: json['destination'] != null ? Destination.fromJson(json['destination']) : null,
       cancelled: json['cancelled'] ?? false,
     );
   }
@@ -413,7 +510,7 @@ class TripStop {
   final String name;
   final Location location;
   final Products products;
-  final List<Line>? lines; // Making lines optional
+  final List<Line>? lines;
 
   TripStop({
     required this.type,
@@ -730,12 +827,35 @@ class _ConnectionsState extends State<Connections> {
                               ? productImage[widget.product]!
                               : "assets/product/placeholder.png"
                       ),
-                      title: Text(widget.stop.products.toMap()[widget.product]!),
+                      title: Text("${trip.line.name}${trip.direction != null ? " nach ${trip.direction}" : ""}"),
                       subtitle: Text(
-                          "Nach ${trip.provenance} um ${DateFormat("HH:mm").format(trip.getPlannedDateTime()!.toLocal())} "
+                          "Um ${DateFormat("HH:mm").format(trip.getPlannedDateTime()!.toLocal())} "
                               "${trip.delay != null && trip.delay != 0 ? "(${trip.delay!.isNegative ? '' : '+'}${trimZero(trip.delay! / 60)}) " : ""}"
                               "Uhr"
                       ),
+                      onTap: () {
+                        showModalBottomSheet<void>(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return SizedBox(
+                              height: 200,
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: <Widget>[
+                                    const Text("Test"),
+                                    ElevatedButton(
+                                      child: const Text('Close BottomSheet'),
+                                      onPressed: () => Navigator.pop(context),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
                     ),
                   );
                 },
