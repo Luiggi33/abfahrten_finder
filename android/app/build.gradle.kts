@@ -55,8 +55,6 @@ android {
         val variant = this
         outputs.forEach { output ->
             if (output is com.android.build.gradle.internal.api.BaseVariantOutputImpl) {
-                val buildType = variant.buildType.name
-                val flavorName = variant.flavorName ?: ""
                 val abiName = output.filters.find { it.filterType == "ABI" }?.identifier ?: "universal"
                 output.outputFileName = "AbfahrtFinder-$abiName.apk"
             }
