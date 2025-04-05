@@ -35,10 +35,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "de.luiggi.abfahrt_finder"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -53,14 +50,31 @@ android {
             storePassword = keystoreProperties["storePassword"] as String
         }
     }
-    buildTypes {
-        release {
-            signingConfig = signingConfigs.getByName("release")
+
+    applicationVariants.all {
+        val variant = this
+        outputs.forEach { output ->
+            if (output is com.android.build.gradle.internal.api.BaseVariantOutputImpl) {
+                val buildType = variant.buildType.name
+                val flavorName = variant.flavorName ?: ""
+                val abiName = output.filters.find { it.filterType == "ABI" }?.identifier ?: "universal"
+                output.outputFileName = "AbfahrtFinder-$abiName.apk"
+            }
         }
-        debug {
-            signingConfig = signingConfigs.getByName("debug")
+    }
+
+    flavorDimensions += "default"
+    productFlavors {
+        create("dev") {
+            dimension = "default"
             applicationIdSuffix = ".debug"
             resValue("string", "app_name", "Abfahrt Finder - Debug")
+            signingConfig = signingConfigs.getByName("debug")
+        }
+        create("prod") {
+            dimension = "default"
+            applicationIdSuffix = ".release"
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
