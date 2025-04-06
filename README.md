@@ -1,16 +1,29 @@
-# abfahrt_finder
+# Abfahrt Finder
 
-Eine App um die Abfahrten in den nahen Stationen einzusehen.
+![Build & Release](https://github.com/Luiggi33/abfahrten_finder/actions/workflows/builder.yaml/badge.svg)
 
-## Getting Started
+Eine App die dich in deiner Entscheidung zum ÖPNV Stop zu rennen unterstützt.
 
-This project is a starting point for a Flutter application.
+## Features
 
-A few resources to get you started if this is your first Flutter project:
+Aktuell kann man alle Stationen des ÖPNV im VBB Netz (Verkehrsbetriebe Berlin Brandenburg) auf die nächten Abfahrten aller HAFAS Produkte prüfen.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+# Departure Finder
+
+![Build & Release](https://github.com/Luiggi33/abfahrten_finder/actions/workflows/builder.yaml/badge.svg)
+
+An app that helps you make the decision to run to a public transport stop.
+
+## Features
+Currently, you can check all public transport stations within the VBB network (Verkehrsbetriebe Berlin Brandenburg) for the next departures of all HAFAS products.
+
+---
+
+## To-Dos
+- [ ] Settings menu
+- [ ] UI improvements
+- [ ] Bottom sheet for trips
+- [ ] Caching/Performance improvements
+- [ ] Show station direction
