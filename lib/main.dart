@@ -1,6 +1,7 @@
 import 'package:abfahrt_finder/data/bvg_api.dart';
 import 'package:abfahrt_finder/provider/loading_provider.dart';
 import 'package:abfahrt_finder/provider/loading_widget.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -53,6 +54,9 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+      ),
+      scrollBehavior: const MaterialScrollBehavior().copyWith(
+        dragDevices: PointerDeviceKind.values.toSet(),
       ),
       builder: LoadingScreen.init(),
       home: AbfahrtenScreen(),
@@ -156,29 +160,36 @@ class _ConnectionsState extends State<Connections> {
           else if (trips.isEmpty)
             const Center(child: Text("No connections found"))
           else
-            Expanded(
-              child: ListView.builder(
-                itemCount: trips.length,
-                itemBuilder: (context, index) {
-                  final trip = trips[index];
-                  return Card(
-                    child: ListTile(
-                      leading: Image.asset(
-                          productImage[widget.product] != null
-                              ? productImage[widget.product]!
-                              : "assets/product/placeholder.png"
+            RefreshIndicator(
+              onRefresh: () async {
+                return Future<void>.delayed(const Duration(seconds: 3));
+              },
+              child: CustomScrollView(
+                slivers: <Widget>[
+                  SliverList.builder(
+                  itemCount: trips.length,
+                  itemBuilder: (context, index) {
+                    final trip = trips[index];
+                    return Card(
+                      child: ListTile(
+                        leading: Image.asset(
+                            productImage[widget.product] != null
+                                ? productImage[widget.product]!
+                                : "assets/product/placeholder.png"
+                        ),
+                        title: Text(widget.stop.products.toMap()[widget.product]!),
+                        subtitle: Text(
+                            "Nach ${trip.provenance} um ${DateFormat("HH:mm").format(trip.getPlannedDateTime()!.toLocal())} "
+                                "${trip.delay != null && trip.delay != 0 ? "(${trip.delay!.isNegative ? '' : '+'}${trimZero(trip.delay! / 60)}) " : ""}"
+                                "Uhr"
+                        ),
                       ),
-                      title: Text(widget.stop.products.toMap()[widget.product]!),
-                      subtitle: Text(
-                          "Nach ${trip.provenance} um ${DateFormat("HH:mm").format(trip.getPlannedDateTime()!.toLocal())} "
-                              "${trip.delay != null && trip.delay != 0 ? "(${trip.delay!.isNegative ? '' : '+'}${trimZero(trip.delay! / 60)}) " : ""}"
-                              "Uhr"
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
+                    );
+                  },
+                ),
+              ]
+            )
+          ),
           Center(
             child: ElevatedButton(
               onPressed: () {
@@ -273,28 +284,36 @@ class _AbfahrtenScreenState extends State<AbfahrtenScreen> {
               child: Text("Drücke den Knopf um Stops in der Nähe zu finden", style: TextStyle(fontSize: 20)),
             )
           else
-            Expanded(
-              child: ListView.builder(
-                itemCount: futureStops.length,
-                itemBuilder: (context, index) {
-                  final item = futureStops[index];
-                  final stationItem = StationItem(
-                    item.name,
-                    "${item.distance.toString()}m",
-                  );
-                  return ListTile(
-                    title: stationItem.buildTitle(context),
-                    subtitle: stationItem.buildSubtitle(context),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => Detail(stop: item),
-                        ),
+            RefreshIndicator(
+              onRefresh: () {
+                print("abcdefg");
+                return Future<void>.delayed(const Duration(seconds: 3));
+              },
+              child: CustomScrollView(
+                slivers: <Widget>[
+                  SliverList.builder(
+                    itemCount: futureStops.length,
+                    itemBuilder: (context, index) {
+                      final item = futureStops[index];
+                      final stationItem = StationItem(
+                        item.name,
+                        "${item.distance.toString()}m",
+                      );
+                      return ListTile(
+                        title: stationItem.buildTitle(context),
+                        subtitle: stationItem.buildSubtitle(context),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => Detail(stop: item),
+                            ),
+                          );
+                        },
                       );
                     },
-                  );
-                },
+                  ),
+                ],
               ),
             ),
         ],
