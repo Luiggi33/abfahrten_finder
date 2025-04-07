@@ -1,15 +1,30 @@
 import 'package:abfahrt_finder/data/bvg_api.dart';
+import 'package:abfahrt_finder/provider/app_settings.dart';
 import 'package:abfahrt_finder/provider/loading_provider.dart';
 import 'package:abfahrt_finder/provider/loading_widget.dart';
 import 'package:flutter/gestures.dart';
+import 'package:abfahrt_finder/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final settings = AppSettings();
+  await settings.loadSettings();
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: settings),
+        ChangeNotifierProvider(create: (_) => LoadingProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 const Map<String, String> productImage = {
@@ -17,6 +32,13 @@ const Map<String, String> productImage = {
   "suburban": "assets/product/sbahn.png",
   "subway": "assets/product/ubahn.png",
 };
+
+const Map<String, String> dataServers = {
+  "BVG": "https://v6.bvg.transport.rest",
+  "VBB": "https://v6.vbb.transport.rest",
+};
+
+const String defaultDataServer = "VBB";
 
 Future<Position> _determinePosition() async {
   bool serviceEnabled;
@@ -115,8 +137,9 @@ class _StatefulWrapperState extends State<StatefulWrapper> {
 class Connections extends StatefulWidget {
   final TransitStop stop;
   final String product;
+  final String apiURL;
 
-  const Connections({super.key, required this.stop, required this.product});
+  const Connections({super.key, required this.stop, required this.product, required this.apiURL});
 
   @override
   State<Connections> createState() => _ConnectionsState();
@@ -133,7 +156,7 @@ class _ConnectionsState extends State<Connections> {
 
   Future<void> loadTrips() async {
     try {
-      final fetchedTrips = await fetchBVGArrivalData(int.parse(widget.stop.id), 20, 10);
+      final fetchedTrips = await fetchBVGArrivalData(context, int.parse(widget.stop.id), 20, 10);
       setState(() {
         trips = fetchedTrips
             .where((e) => e.line.product == widget.product)
@@ -147,7 +170,9 @@ class _ConnectionsState extends State<Connections> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.stop.name)),
+      appBar: AppBar(
+        title: Text(widget.stop.name),
+      ),
       body: trips.isEmpty
         ? Center(child: Text("No connections found"))
         : RefreshIndicator(
@@ -186,8 +211,9 @@ class _ConnectionsState extends State<Connections> {
 
 class Detail extends StatelessWidget {
   final TransitStop stop;
+  final String apiURL;
 
-  const Detail({super.key, required this.stop});
+  const Detail({super.key, required this.stop, required this.apiURL});
 
   @override
   Widget build(BuildContext context) {
@@ -205,7 +231,7 @@ class Detail extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => Connections(stop: stop, product: prod),
+                      builder: (context) => Connections(apiURL: apiURL, stop: stop, product: prod),
                     ),
                   );
                 },
@@ -219,6 +245,15 @@ class Detail extends StatelessWidget {
 
 class _AbfahrtenScreenState extends State<AbfahrtenScreen> {
   List<TransitStop> futureStops = [];
+  late String apiURL;
+  late String dataServer;
+
+  @override
+  void initState() {
+    super.initState();
+    dataServer = defaultDataServer;
+    apiURL = dataServers[dataServer]!;
+  }
 
   Future<void> _fetchStops(BuildContext context, bool showLoading) async {
     final loadingProvider = context.read<LoadingProvider>();
@@ -228,8 +263,7 @@ class _AbfahrtenScreenState extends State<AbfahrtenScreen> {
 
     try {
       final pos = await _determinePosition();
-      final stops = await fetchBVGStopData(pos.latitude, pos.longitude, 300);
-
+      final stops = await fetchBVGStopData(context, pos.latitude, pos.longitude);
       setState(() {
         futureStops = stops;
       });
@@ -250,6 +284,15 @@ class _AbfahrtenScreenState extends State<AbfahrtenScreen> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text("Abfahrt Finder Demo"),
+        actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: 'Open settings',
+            onPressed: () {
+              Navigator.of(context).push(MaterialPageRoute(builder: (context) => SettingsScreen(apiURLKey: dataServer)));
+            },
+          ),
+        ],
       ),
       body: futureStops.isEmpty
         ? Center(
@@ -280,7 +323,7 @@ class _AbfahrtenScreenState extends State<AbfahrtenScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => Detail(stop: item),
+                          builder: (context) => Detail(apiURL: apiURL, stop: item),
                         ),
                       );
                     },
