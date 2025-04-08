@@ -124,7 +124,6 @@ class Connections extends StatefulWidget {
 
 class _ConnectionsState extends State<Connections> {
   List<Trip> trips = [];
-  bool isLoading = true;
 
   @override
   void initState() {
@@ -139,13 +138,9 @@ class _ConnectionsState extends State<Connections> {
         trips = fetchedTrips
             .where((e) => e.line.product == widget.product)
             .toList();
-        isLoading = false;
       });
     } catch (e) {
       print("Error loading trips: $e");
-      setState(() {
-        isLoading = false;
-      });
     }
   }
 
@@ -153,55 +148,38 @@ class _ConnectionsState extends State<Connections> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(widget.stop.name)),
-      body: Column(
-        children: <Widget>[
-          if (isLoading)
-            const Center(child: CircularProgressIndicator())
-          else if (trips.isEmpty)
-            const Center(child: Text("No connections found"))
-          else
-            RefreshIndicator(
-              onRefresh: () async {
-                return Future<void>.delayed(const Duration(seconds: 3));
-              },
-              child: CustomScrollView(
-                scrollDirection: Axis.vertical,
-                shrinkWrap: true,
-                slivers: <Widget>[
-                SliverList.builder(
-                  itemCount: trips.length,
-                  itemBuilder: (context, index) {
-                    final trip = trips[index];
-                    return Card(
-                      child: ListTile(
-                        leading: Image.asset(
-                            productImage[widget.product] != null
-                                ? productImage[widget.product]!
-                                : "assets/product/placeholder.png"
-                        ),
-                        title: Text(widget.stop.products.toMap()[widget.product]!),
-                        subtitle: Text(
-                            "Nach ${trip.provenance} um ${DateFormat("HH:mm").format(trip.getPlannedDateTime()!.toLocal())} "
-                                "${trip.delay != null && trip.delay != 0 ? "(${trip.delay!.isNegative ? '' : '+'}${trimZero(trip.delay! / 60)}) " : ""}"
-                                "Uhr"
-                        ),
+      body: trips.isEmpty
+        ? Center(child: Text("No connections found"))
+        : RefreshIndicator(
+          onRefresh: () async {
+            return loadTrips();
+          },
+          child: CustomScrollView(
+            slivers: <Widget>[
+              SliverList.builder(
+                itemCount: trips.length,
+                itemBuilder: (context, index) {
+                  final trip = trips[index];
+                  return Card(
+                    child: ListTile(
+                      leading: Image.asset(
+                          productImage[widget.product] != null
+                              ? productImage[widget.product]!
+                              : "assets/product/placeholder.png"
                       ),
-                    );
-                  },
-                ),
-              ]
-            )
-          ),
-          Center(
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text('Back'),
-            ),
-          ),
-        ],
-      ),
+                      title: Text(widget.stop.products.toMap()[widget.product]!),
+                      subtitle: Text(
+                          "Nach ${trip.provenance} um ${DateFormat("HH:mm").format(trip.getPlannedDateTime()!.toLocal())} "
+                              "${trip.delay != null && trip.delay != 0 ? "(${trip.delay!.isNegative ? '' : '+'}${trimZero(trip.delay! / 60)}) " : ""}"
+                              "Uhr"
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ]
+          )
+        )
     );
   }
 }
@@ -233,14 +211,6 @@ class Detail extends StatelessWidget {
                 },
               ),
             ),
-          Center(
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text('Back'),
-            ),
-          ),
         ],
       ),
     );
@@ -250,9 +220,9 @@ class Detail extends StatelessWidget {
 class _AbfahrtenScreenState extends State<AbfahrtenScreen> {
   List<TransitStop> futureStops = [];
 
-  Future<void> _fetchStops(BuildContext context, bool shouldShowLoading) async {
+  Future<void> _fetchStops(BuildContext context, bool showLoading) async {
     final loadingProvider = context.read<LoadingProvider>();
-    if (shouldShowLoading) {
+    if (showLoading) {
       loadingProvider.setLoad(true);
     }
 
@@ -266,7 +236,7 @@ class _AbfahrtenScreenState extends State<AbfahrtenScreen> {
     } catch (error) {
       print("Error fetching stops: $error");
     } finally {
-      if (context.mounted && shouldShowLoading) {
+      if (context.mounted && showLoading) {
         loadingProvider.setLoad(false);
       }
     }
