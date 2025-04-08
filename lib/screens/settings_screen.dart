@@ -6,42 +6,58 @@ import 'package:settings_ui/settings_ui.dart';
 import '../provider/app_settings.dart';
 
 class SettingsScreen extends StatefulWidget {
-  late String apiURLKey;
-
-  SettingsScreen({super.key, required this.apiURLKey });
+  SettingsScreen({ super.key });
 
   @override
   _SettingsScreenState createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState  extends State<SettingsScreen> {
+class _SettingsScreenState extends State<SettingsScreen> {
+
+  late String apiURLKey;
+
+  @override
+  void initState() {
+    super.initState();
+    final settingData = Provider.of<AppSettings>(context, listen: false);
+    apiURLKey = settingData.currentDataServer;
+  }
 
   void _show(BuildContext ctx) {
     showModalBottomSheet(
       isScrollControlled: true,
       elevation: 5,
       context: ctx,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          top: 15,
-          left: 15,
-          right: 15,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 15),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (final dservID in dataServers.keys)
-              ElevatedButton(onPressed: () {
-                final settings = Provider.of<AppSettings>(ctx, listen: false);
-                settings.setDataServer(dataServers[dservID]!);
-                setState(() {
-                  widget.apiURLKey = dservID;
-                });
-                Navigator.pop(ctx);
-              }, child: Text(dservID))
-          ],
-        ),
+      builder: (ctx) => SizedBox(
+        height: MediaQuery.of(ctx).size.width * 0.5,
+        width: MediaQuery.of(ctx).size.height * 0.5,
+        child: Padding(
+          padding: EdgeInsets.only(
+            top: 15,
+            left: 15,
+            right: 15,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 15,
+          ),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              spacing: 10,
+              children: [
+                Text("Please select API server"),
+                for (final dservID in dataServers.keys)
+                  ElevatedButton(onPressed: () {
+                    final settings = Provider.of<AppSettings>(ctx, listen: false);
+                    settings.setDataServer(dservID);
+                    setState(() {
+                      apiURLKey = dservID;
+                    });
+                    Navigator.pop(ctx);
+                  }, child: Text(dservID)),
+              ],
+            ),
+          )
+        )
       )
     );
   }
@@ -57,7 +73,7 @@ class _SettingsScreenState  extends State<SettingsScreen> {
             tiles: [
               SettingsTile.navigation(
                 title: Text('API Server'),
-                description: Text(widget.apiURLKey),
+                description: Text(apiURLKey),
                 leading: Icon(Icons.language),
                 onPressed: (BuildContext context) {
                   _show(context);

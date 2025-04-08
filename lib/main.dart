@@ -289,7 +289,7 @@ class _AbfahrtenScreenState extends State<AbfahrtenScreen> {
             icon: const Icon(Icons.settings),
             tooltip: 'Open settings',
             onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(builder: (context) => SettingsScreen(apiURLKey: dataServer)));
+              Navigator.of(context).push(MaterialPageRoute(builder: (context) => SettingsScreen()));
             },
           ),
         ],
