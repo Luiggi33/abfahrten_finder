@@ -165,8 +165,10 @@ class _ConnectionsState extends State<Connections> {
                 return Future<void>.delayed(const Duration(seconds: 3));
               },
               child: CustomScrollView(
+                scrollDirection: Axis.vertical,
+                shrinkWrap: true,
                 slivers: <Widget>[
-                  SliverList.builder(
+                SliverList.builder(
                   itemCount: trips.length,
                   itemBuilder: (context, index) {
                     final trip = trips[index];
@@ -248,79 +250,76 @@ class Detail extends StatelessWidget {
 class _AbfahrtenScreenState extends State<AbfahrtenScreen> {
   List<TransitStop> futureStops = [];
 
-  void _fetchStops(BuildContext context) {
+  Future<void> _fetchStops(BuildContext context, bool shouldShowLoading) async {
     final loadingProvider = context.read<LoadingProvider>();
-    loadingProvider.setLoad(true);
+    if (shouldShowLoading) {
+      loadingProvider.setLoad(true);
+    }
 
-    _determinePosition().then((pos) {
-      return fetchBVGStopData(pos.latitude, pos.longitude, 300);
-    }).then((stops) {
+    try {
+      final pos = await _determinePosition();
+      final stops = await fetchBVGStopData(pos.latitude, pos.longitude, 300);
+
       setState(() {
         futureStops = stops;
       });
-    }).catchError((error) {
+    } catch (error) {
       print("Error fetching stops: $error");
-    }).whenComplete(() {
-      if (context.mounted) {
+    } finally {
+      if (context.mounted && shouldShowLoading) {
         loadingProvider.setLoad(false);
       }
-    });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme
-            .of(context)
-            .colorScheme
-            .inversePrimary,
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text("Abfahrt Finder Demo"),
       ),
-      body: Column(
-        children: <Widget>[
-          if (futureStops.isEmpty)
-            Expanded(
-              child: Text("Drücke den Knopf um Stops in der Nähe zu finden", style: TextStyle(fontSize: 20)),
-            )
-          else
-            RefreshIndicator(
-              onRefresh: () {
-                print("abcdefg");
-                return Future<void>.delayed(const Duration(seconds: 3));
-              },
-              child: CustomScrollView(
-                slivers: <Widget>[
-                  SliverList.builder(
-                    itemCount: futureStops.length,
-                    itemBuilder: (context, index) {
-                      final item = futureStops[index];
-                      final stationItem = StationItem(
-                        item.name,
-                        "${item.distance.toString()}m",
-                      );
-                      return ListTile(
-                        title: stationItem.buildTitle(context),
-                        subtitle: stationItem.buildSubtitle(context),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => Detail(stop: item),
-                            ),
-                          );
-                        },
+      body: futureStops.isEmpty
+        ? Center(
+          child: Text(
+            "Drücke den Knopf um Stops in der Nähe zu finden",
+            style: TextStyle(fontSize: 20),
+            textAlign: TextAlign.center,
+          ),
+        )
+        : RefreshIndicator(
+          onRefresh: () => _fetchStops(context, false),
+          child: CustomScrollView(
+            physics: AlwaysScrollableScrollPhysics(),
+            slivers: <Widget>[
+              SliverList.builder(
+                itemCount: futureStops.length,
+                itemBuilder: (context, index) {
+                  final item = futureStops[index];
+                  final stationItem = StationItem(
+                    item.name,
+                    "${item.distance.toString()}m",
+                  );
+                  return ListTile(
+                    title: stationItem.buildTitle(context),
+                    subtitle: stationItem.buildSubtitle(context),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => Detail(stop: item),
+                        ),
                       );
                     },
-                  ),
-                ],
+                  );
+                },
               ),
-            ),
-        ],
-      ),
+            ],
+          ),
+        ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          _fetchStops(context);
+          _fetchStops(context, true);
         },
         tooltip: 'Search Location',
         child: const Icon(Icons.search),
