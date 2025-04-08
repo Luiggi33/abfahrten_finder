@@ -6,7 +6,7 @@ import 'package:settings_ui/settings_ui.dart';
 import '../provider/app_settings.dart';
 
 class SettingsScreen extends StatefulWidget {
-  SettingsScreen({ super.key });
+  const SettingsScreen({ super.key });
 
   @override
   _SettingsScreenState createState() => _SettingsScreenState();
@@ -23,7 +23,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     apiURLKey = settingData.currentDataServer;
   }
 
-  void _show(BuildContext ctx) {
+  void _showAPIServerSettings(BuildContext ctx) {
     showModalBottomSheet(
       isScrollControlled: true,
       elevation: 5,
@@ -76,7 +76,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 description: Text(apiURLKey),
                 leading: Icon(Icons.language),
                 onPressed: (BuildContext context) {
-                  _show(context);
+                  _showAPIServerSettings(context);
                 },
               ),
             ],
