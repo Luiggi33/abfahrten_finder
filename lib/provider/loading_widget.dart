@@ -22,28 +22,28 @@ class LoadingCustom extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: ChangeNotifierProvider<LoadingProvider>(
-            create: (context) => LoadingProvider(),
-            builder: (context, _) {
-              return Stack(
-                  children: [
-                    child,
-                    Consumer<LoadingProvider>(
-                        builder: (context, provider, child) {
-                          return provider.loading
-                              ? Container(
-                                color: Colors.black54,
-                                child: Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                              )
-                              : Container();
-                        }
+      body: ChangeNotifierProvider<LoadingProvider>(
+        create: (context) => LoadingProvider(),
+        builder: (context, _) {
+          return Stack(
+            children: [
+              child,
+              Consumer<LoadingProvider>(
+                builder: (context, provider, child) {
+                  return provider.loading
+                    ? Container(
+                      color: Colors.black54,
+                      child: Center(
+                        child: CircularProgressIndicator(),
+                      )
                     )
-                  ]
-              );
-            }
-        )
+                    : Container();
+                }
+              )
+            ]
+          );
+        }
+      )
     );
   }
 }

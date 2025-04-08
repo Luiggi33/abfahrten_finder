@@ -1,6 +1,7 @@
 import 'package:abfahrt_finder/data/bvg_api.dart';
 import 'package:abfahrt_finder/provider/loading_provider.dart';
 import 'package:abfahrt_finder/provider/loading_widget.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -53,6 +54,9 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+      ),
+      scrollBehavior: const MaterialScrollBehavior().copyWith(
+        dragDevices: PointerDeviceKind.values.toSet(),
       ),
       builder: LoadingScreen.init(),
       home: AbfahrtenScreen(),
@@ -120,7 +124,6 @@ class Connections extends StatefulWidget {
 
 class _ConnectionsState extends State<Connections> {
   List<Trip> trips = [];
-  bool isLoading = true;
 
   @override
   void initState() {
@@ -135,13 +138,9 @@ class _ConnectionsState extends State<Connections> {
         trips = fetchedTrips
             .where((e) => e.line.product == widget.product)
             .toList();
-        isLoading = false;
       });
     } catch (e) {
       print("Error loading trips: $e");
-      setState(() {
-        isLoading = false;
-      });
     }
   }
 
@@ -149,15 +148,15 @@ class _ConnectionsState extends State<Connections> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(widget.stop.name)),
-      body: Column(
-        children: <Widget>[
-          if (isLoading)
-            const Center(child: CircularProgressIndicator())
-          else if (trips.isEmpty)
-            const Center(child: Text("No connections found"))
-          else
-            Expanded(
-              child: ListView.builder(
+      body: trips.isEmpty
+        ? Center(child: Text("No connections found"))
+        : RefreshIndicator(
+          onRefresh: () async {
+            return loadTrips();
+          },
+          child: CustomScrollView(
+            slivers: <Widget>[
+              SliverList.builder(
                 itemCount: trips.length,
                 itemBuilder: (context, index) {
                   final trip = trips[index];
@@ -178,17 +177,9 @@ class _ConnectionsState extends State<Connections> {
                   );
                 },
               ),
-            ),
-          Center(
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text('Back'),
-            ),
-          ),
-        ],
-      ),
+            ]
+          )
+        )
     );
   }
 }
@@ -220,14 +211,6 @@ class Detail extends StatelessWidget {
                 },
               ),
             ),
-          Center(
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text('Back'),
-            ),
-          ),
         ],
       ),
     );
@@ -237,44 +220,52 @@ class Detail extends StatelessWidget {
 class _AbfahrtenScreenState extends State<AbfahrtenScreen> {
   List<TransitStop> futureStops = [];
 
-  void _fetchStops(BuildContext context) {
+  Future<void> _fetchStops(BuildContext context, bool showLoading) async {
     final loadingProvider = context.read<LoadingProvider>();
-    loadingProvider.setLoad(true);
+    if (showLoading) {
+      loadingProvider.setLoad(true);
+    }
 
-    _determinePosition().then((pos) {
-      return fetchBVGStopData(pos.latitude, pos.longitude, 300);
-    }).then((stops) {
+    try {
+      final pos = await _determinePosition();
+      final stops = await fetchBVGStopData(pos.latitude, pos.longitude, 300);
+
       setState(() {
         futureStops = stops;
       });
-    }).catchError((error) {
+    } catch (error) {
       print("Error fetching stops: $error");
-    }).whenComplete(() {
-      if (context.mounted) {
+    } finally {
+      if (context.mounted && showLoading) {
         loadingProvider.setLoad(false);
       }
-    });
+    }
   }
+
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme
-            .of(context)
-            .colorScheme
-            .inversePrimary,
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text("Abfahrt Finder Demo"),
       ),
-      body: Column(
-        children: <Widget>[
-          if (futureStops.isEmpty)
-            Expanded(
-              child: Text("Drücke den Knopf um Stops in der Nähe zu finden", style: TextStyle(fontSize: 20)),
-            )
-          else
-            Expanded(
-              child: ListView.builder(
+      body: futureStops.isEmpty
+        ? Center(
+          child: Text(
+            "Drücke den Knopf um Stops in der Nähe zu finden",
+            style: TextStyle(fontSize: 20),
+            textAlign: TextAlign.center,
+          ),
+        )
+        : RefreshIndicator(
+          key: _refreshIndicatorKey,
+          onRefresh: () => _fetchStops(context, false),
+          child: CustomScrollView(
+            physics: AlwaysScrollableScrollPhysics(),
+            slivers: <Widget>[
+              SliverList.builder(
                 itemCount: futureStops.length,
                 itemBuilder: (context, index) {
                   final item = futureStops[index];
@@ -296,12 +287,16 @@ class _AbfahrtenScreenState extends State<AbfahrtenScreen> {
                   );
                 },
               ),
-            ),
-        ],
-      ),
+            ],
+          ),
+        ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          _fetchStops(context);
+          if (futureStops.isNotEmpty) {
+            _refreshIndicatorKey.currentState?.show();
+          } else {
+            _fetchStops(context, true);
+          }
         },
         tooltip: 'Search Location',
         child: const Icon(Icons.search),
