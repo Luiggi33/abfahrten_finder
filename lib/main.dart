@@ -272,6 +272,8 @@ class _AbfahrtenScreenState extends State<AbfahrtenScreen> {
     }
   }
 
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -288,6 +290,7 @@ class _AbfahrtenScreenState extends State<AbfahrtenScreen> {
           ),
         )
         : RefreshIndicator(
+          key: _refreshIndicatorKey,
           onRefresh: () => _fetchStops(context, false),
           child: CustomScrollView(
             physics: AlwaysScrollableScrollPhysics(),
@@ -319,7 +322,11 @@ class _AbfahrtenScreenState extends State<AbfahrtenScreen> {
         ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          _fetchStops(context, true);
+          if (futureStops.isNotEmpty) {
+            _refreshIndicatorKey.currentState?.show();
+          } else {
+            _fetchStops(context, true);
+          }
         },
         tooltip: 'Search Location',
         child: const Icon(Icons.search),
