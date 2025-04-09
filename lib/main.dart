@@ -156,7 +156,7 @@ class _ConnectionsState extends State<Connections> {
 
   Future<void> loadTrips() async {
     try {
-      final fetchedTrips = await fetchBVGArrivalData(context, int.parse(widget.stop.id), 20, 10);
+      final fetchedTrips = await fetchBVGArrivalData(context, int.parse(widget.stop.id), 20);
       setState(() {
         trips = fetchedTrips
             .where((e) => e.line.product == widget.product)

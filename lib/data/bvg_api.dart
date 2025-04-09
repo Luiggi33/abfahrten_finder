@@ -21,11 +21,11 @@ Future<List<TransitStop>> fetchBVGStopData(BuildContext context, double latitude
   }
 }
 
-Future<List<Trip>> fetchBVGArrivalData(BuildContext context, int stopID, int duration, int results) async {
+Future<List<Trip>> fetchBVGArrivalData(BuildContext context, int stopID, int duration) async {
   final settings = Provider.of<AppSettings>(context, listen: false);
   final response = await http.get(
     Uri.parse(
-        "${settings.apiURL}/stops/$stopID/arrivals?duration=$duration&results=$results"
+        "${settings.apiURL}/stops/$stopID/arrivals?duration=$duration&results=${settings.searchRadius}"
     ),
   );
 
