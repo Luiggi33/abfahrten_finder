@@ -1,0 +1,63 @@
+name: "Tester"
+
+on:
+  push:
+    branches:
+      - dev
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Run Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set Up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set Up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: pubspec.yaml
+          channel: 'stable'
+          cache: true
+          cache-key: "flutter-:os:-:channel:-:version:-:arch:-:hash:"
+          cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:"
+          pub-cache-key: "flutter-pub:os:-:channel:-:version:-:arch:-:hash:"
+          pub-cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:"
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Run Tests
+        run: flutter test -r github --coverage
+
+#      - uses: sonarsource/sonarqube-scan-action@master
+#        env:
+#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+
+      - name: Display test coverage
+        run: |
+          if grep -q 'All files.*:.*[0-9]\+\.[0-9]\+%' coverage/lcov.info; then
+            grep 'All files.*:.*[0-9]\+\.[0-9]\+%' coverage/lcov.info
+          else
+            echo "No coverage summary found."
+          fi
