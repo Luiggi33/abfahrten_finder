@@ -76,6 +76,7 @@ jobs:
           skip-commit: "true"
           skip-tag: "true"
           skip-bump: "true"
+          version-file: pubspec.yaml
           output-file: ${{ github.workspace }}-CHANGELOG.txt
 
       - name: Release
@@ -84,6 +85,7 @@ jobs:
           name: Abfahrt Finder - ${{ env.VERSION }}
           tag_name: v${{ env.VERSION }}
           body_path: ${{ github.workspace }}-CHANGELOG.txt
+          draft: true
           files: |
             build/app/outputs/apk/prod/release/AbfahrtFinder-arm64-v8a.apk
             build/app/outputs/apk/prod/release/AbfahrtFinder-armeabi-v7a.apk
