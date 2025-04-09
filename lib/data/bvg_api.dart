@@ -1,9 +1,6 @@
 import 'dart:convert';
 
-import 'package:abfahrt_finder/provider/app_settings.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
-import 'package:provider/provider.dart';
 
 Future<List<TransitStop>> fetchBVGStopData(String apiURL, double latitude, double longitude, int searchRadius) async {
   final response = await http.get(
@@ -13,8 +10,8 @@ Future<List<TransitStop>> fetchBVGStopData(String apiURL, double latitude, doubl
   );
 
   if (response.statusCode == 200) {
-    List<dynamic> parsedListJson = jsonDecode(response.body);
-    return parsedListJson.map((json) => TransitStop.fromJson(json)).toList();
+    List<dynamic> parsed = jsonDecode(response.body);
+    return parsed.map<TransitStop>((json) => TransitStop.fromJson(json)).toList();
   } else {
     throw Exception("Failed to load BVG stop data");
   }
