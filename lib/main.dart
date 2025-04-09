@@ -156,7 +156,8 @@ class _ConnectionsState extends State<Connections> {
 
   Future<void> loadTrips() async {
     try {
-      final fetchedTrips = await fetchBVGArrivalData(context, int.parse(widget.stop.id), 20);
+      final settings = Provider.of<AppSettings>(context, listen: false);
+      final fetchedTrips = await fetchBVGArrivalData(settings.apiURL, int.parse(widget.stop.id), 20, 30);
       setState(() {
         trips = fetchedTrips
             .where((e) => e.line.product == widget.product)
@@ -245,30 +246,41 @@ class Detail extends StatelessWidget {
 
 class _AbfahrtenScreenState extends State<AbfahrtenScreen> {
   List<TransitStop> futureStops = [];
-  late String apiURL;
-  late String dataServer;
 
   @override
   void initState() {
     super.initState();
-    dataServer = defaultDataServer;
-    apiURL = dataServers[dataServer]!;
+    final settings = Provider.of<AppSettings>(context, listen: false);
+    if (settings.loadOnStart) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _fetchStops(context, true);
+      });
+    }
   }
 
   Future<void> _fetchStops(BuildContext context, bool showLoading) async {
     final loadingProvider = context.read<LoadingProvider>();
+    if (loadingProvider.loading) {
+      return;
+    }
     if (showLoading) {
       loadingProvider.setLoad(true);
     }
 
     try {
       final pos = await _determinePosition();
-      final stops = await fetchBVGStopData(context, pos.latitude, pos.longitude);
+      if (!context.mounted) {
+        loadingProvider.setLoad(false);
+        return;
+      }
+      final settings = Provider.of<AppSettings>(context, listen: false);
+      final stops = await fetchBVGStopData(settings.apiURL, pos.latitude, pos.longitude, settings.searchRadius);
       setState(() {
         futureStops = stops;
       });
     } catch (error) {
       print("Error fetching stops: $error");
+      loadingProvider.setLoad(false);
     } finally {
       if (context.mounted && showLoading) {
         loadingProvider.setLoad(false);
@@ -320,10 +332,11 @@ class _AbfahrtenScreenState extends State<AbfahrtenScreen> {
                     title: stationItem.buildTitle(context),
                     subtitle: stationItem.buildSubtitle(context),
                     onTap: () {
+                      final settings = Provider.of<AppSettings>(context, listen: false);
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => Detail(apiURL: apiURL, stop: item),
+                          builder: (context) => Detail(apiURL: settings.apiURL, stop: item),
                         ),
                       );
                     },

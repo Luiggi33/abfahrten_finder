@@ -16,6 +16,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   late String apiURLKey;
   late int searchRadius;
+  late bool loadOnStart;
 
   @override
   void initState() {
@@ -23,6 +24,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final settingData = Provider.of<AppSettings>(context, listen: false);
     apiURLKey = settingData.currentDataServer;
     searchRadius = settingData.searchRadius;
+    loadOnStart = settingData.loadOnStart;
   }
 
   void _showAPIServerSettings(BuildContext context) {
@@ -135,9 +137,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
               SettingsTile.navigation(
                 title: Text('Search Radius'),
                 description: Text(searchRadius.toString()),
-                leading: Icon(Icons.search),
+                leading: Icon(Icons.radar),
                 onPressed: (context) => _showSearchRadiusSettings(context),
               ),
+              SettingsTile.switchTile(
+                title: Text('Load Stops on App Start'),
+                initialValue: loadOnStart,
+                leading: Icon(Icons.search),
+                onToggle: (value) {
+                  final settingData = Provider.of<AppSettings>(context, listen: false);
+                  settingData.setLoadOnStart(value);
+                  setState(() {
+                    loadOnStart = value;
+                  });
+                },
+              )
             ],
           ),
         ],

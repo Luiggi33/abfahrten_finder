@@ -5,27 +5,25 @@ import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
-Future<List<TransitStop>> fetchBVGStopData(BuildContext context, double latitude, double longitude) async {
-  final settings = Provider.of<AppSettings>(context, listen: false);
+Future<List<TransitStop>> fetchBVGStopData(String apiURL, double latitude, double longitude, int searchRadius) async {
   final response = await http.get(
     Uri.parse(
-      "${settings.apiURL}/locations/nearby?latitude=$latitude&longitude=$longitude&linesOfStops=true",
+      "$apiURL/locations/nearby?latitude=$latitude&longitude=$longitude&distance=$searchRadius&linesOfStops=true",
     ),
   );
 
   if (response.statusCode == 200) {
     List<dynamic> parsedListJson = jsonDecode(response.body);
-    return parsedListJson.map((json) => TransitStop.fromJson(json)).where((e) => e.distance < settings.searchRadius).toList();
+    return parsedListJson.map((json) => TransitStop.fromJson(json)).toList();
   } else {
     throw Exception("Failed to load BVG stop data");
   }
 }
 
-Future<List<Trip>> fetchBVGArrivalData(BuildContext context, int stopID, int duration) async {
-  final settings = Provider.of<AppSettings>(context, listen: false);
+Future<List<Trip>> fetchBVGArrivalData(String apiURL, int stopID, int duration, int maxResults) async {
   final response = await http.get(
     Uri.parse(
-        "${settings.apiURL}/stops/$stopID/arrivals?duration=$duration&results=${settings.searchRadius}"
+        "$apiURL/stops/$stopID/arrivals?duration=$duration&results=$maxResults"
     ),
   );
 
