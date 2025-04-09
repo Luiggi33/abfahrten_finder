@@ -39,6 +39,8 @@ const Map<String, String> dataServers = {
 };
 
 const String defaultDataServer = "VBB";
+const int minDistance = 100;
+const int maxDistance = 500;
 
 Future<Position> _determinePosition() async {
   bool serviceEnabled;

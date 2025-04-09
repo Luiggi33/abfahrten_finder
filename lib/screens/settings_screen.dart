@@ -95,8 +95,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   SizedBox(height: 25),
                   Slider(
                     value: localSearchRadius.toDouble(),
-                    min: 100,
-                    max: 500,
+                    min: minDistance.toDouble(),
+                    max: maxDistance.toDouble(),
                     divisions: 40,
                     label: localSearchRadius.toString(),
                     onChanged: (double value) {

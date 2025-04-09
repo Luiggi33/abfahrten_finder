@@ -2,16 +2,18 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../main.dart';
+
 Future<List<TransitStop>> fetchBVGStopData(String apiURL, double latitude, double longitude, int searchRadius) async {
   final response = await http.get(
     Uri.parse(
-      "$apiURL/locations/nearby?latitude=$latitude&longitude=$longitude&distance=$searchRadius&linesOfStops=true",
+      "$apiURL/locations/nearby?latitude=$latitude&longitude=$longitude&distance=$maxDistance&linesOfStops=true",
     ),
   );
 
   if (response.statusCode == 200) {
     List<dynamic> parsed = jsonDecode(response.body);
-    return parsed.map<TransitStop>((json) => TransitStop.fromJson(json)).toList();
+    return parsed.map<TransitStop>((json) => TransitStop.fromJson(json)).where((e) => e.distance < searchRadius).toList();
   } else {
     throw Exception("Failed to load BVG stop data");
   }
