@@ -17,6 +17,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String apiURLKey;
   late int searchRadius;
   late bool loadOnStart;
+  late bool isDarkMode;
 
   @override
   void initState() {
@@ -25,6 +26,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     apiURLKey = settingData.currentDataServer;
     searchRadius = settingData.searchRadius;
     loadOnStart = settingData.loadOnStart;
+    isDarkMode = settingData.isDarkMode;
   }
 
   void _showAPIServerSettings(BuildContext context) {
@@ -32,34 +34,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
       isScrollControlled: true,
       elevation: 5,
       context: context,
-      builder: (context) => SizedBox(
-        height: MediaQuery.of(context).size.width * 0.5,
-        width: MediaQuery.of(context).size.height * 0.5,
-        child: Padding(
-          padding: EdgeInsets.only(
-            top: 15,
-            left: 15,
-            right: 15,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 15,
-          ),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              spacing: 10,
-              children: [
-                Text("Please select API server"),
-                for (final dservID in dataServers.keys)
-                  ElevatedButton(onPressed: () {
-                    final settings = Provider.of<AppSettings>(context, listen: false);
-                    settings.setDataServer(dservID);
-                    setState(() {
-                      apiURLKey = dservID;
-                    });
-                    Navigator.pop(context);
-                  }, child: Text(dservID)),
-              ],
+      builder: (context) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.of(context).size.width * 0.5,
+          width: MediaQuery.of(context).size.height * 0.5,
+          child: Padding(
+            padding: EdgeInsets.only(
+              top: 15,
+              left: 15,
+              right: 15,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 15,
             ),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: 10,
+                children: [
+                  Text("Please select API server"),
+                  for (final dservID in dataServers.keys)
+                    ElevatedButton(onPressed: () {
+                      final settings = Provider.of<AppSettings>(context, listen: false);
+                      settings.setDataServer(dservID);
+                      setState(() {
+                        apiURLKey = dservID;
+                      });
+                      Navigator.pop(context);
+                    }, child: Text(dservID)),
+                ],
+              ),
+            )
           )
         )
       )
@@ -74,39 +78,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
       elevation: 5,
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => SizedBox(
-          height: MediaQuery.of(context).size.width * 0.5,
-          width: MediaQuery.of(context).size.height * 0.5,
-          child: Padding(
-            padding: EdgeInsets.only(
-              top: 15,
-              left: 15,
-              right: 15,
-              bottom: MediaQuery.of(context).viewInsets.bottom + 15,
-            ),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text("Select Search Radius", style: TextStyle(fontSize: 20),),
-                  SizedBox(height: 15),
-                  Text("Current Radius: $localSearchRadius"),
-                  SizedBox(height: 25),
-                  Slider(
-                    value: localSearchRadius.toDouble(),
-                    min: minDistance.toDouble(),
-                    max: maxDistance.toDouble(),
-                    divisions: 40,
-                    label: localSearchRadius.toString(),
-                    onChanged: (double value) {
-                      setModalState(() {
-                        localSearchRadius = value.toInt();
-                      });
-                    },
-                  ),
-                ],
+        builder: (context, setModalState) => SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(context).size.width * 0.5,
+            width: MediaQuery.of(context).size.height * 0.5,
+            child: Padding(
+              padding: EdgeInsets.only(
+                top: 15,
+                left: 15,
+                right: 15,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 15,
               ),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text("Select Search Radius", style: TextStyle(fontSize: 20),),
+                    SizedBox(height: 15),
+                    Text("Current Radius: $localSearchRadius"),
+                    SizedBox(height: 25),
+                    Slider(
+                      value: localSearchRadius.toDouble(),
+                      min: minDistance.toDouble(),
+                      max: maxDistance.toDouble(),
+                      divisions: 40,
+                      label: localSearchRadius.toString(),
+                      onChanged: (double value) {
+                        setModalState(() {
+                          localSearchRadius = value.toInt();
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              )
             )
           )
         )
@@ -121,6 +127,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final settingData = Provider.of<AppSettings>(context, listen: false);
     return Scaffold(
       appBar: AppBar(title: Text('Settings')),
       body: SettingsList(
@@ -141,17 +148,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onPressed: (context) => _showSearchRadiusSettings(context),
               ),
               SettingsTile.switchTile(
-                title: Text('Load Stops on App Start'),
+                title: Text('Load stops on start'),
                 initialValue: loadOnStart,
                 leading: Icon(Icons.search),
                 onToggle: (value) {
-                  final settingData = Provider.of<AppSettings>(context, listen: false);
                   settingData.setLoadOnStart(value);
                   setState(() {
                     loadOnStart = value;
                   });
                 },
-              )
+              ),
+              SettingsTile.switchTile(
+                title: Text("Use Dark Mode?"),
+                initialValue: isDarkMode,
+                leading: Icon(isDarkMode ? Icons.dark_mode : Icons.light_mode_outlined),
+                onToggle: (value) {
+                  settingData.setDarkTheme(value);
+                  setState(() {
+                    isDarkMode = value;
+                  });
+                },
+              ),
             ],
           ),
         ],

@@ -31,6 +31,8 @@ const Map<String, String> productImage = {
   "bus": "assets/product/bus.png",
   "suburban": "assets/product/sbahn.png",
   "subway": "assets/product/ubahn.png",
+  "tram": "assets/product/tram.png",
+  "ferry": "assets/product/ferry.png",
 };
 
 const Map<String, String> dataServers = {
@@ -73,12 +75,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final settings = Provider.of<AppSettings>(context);
     initializeDateFormatting("de_DE");
     return MaterialApp(
       title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
+      theme: settings.theme,
       scrollBehavior: const MaterialScrollBehavior().copyWith(
         dragDevices: PointerDeviceKind.values.toSet(),
       ),
@@ -136,18 +137,18 @@ class _StatefulWrapperState extends State<StatefulWrapper> {
   }
 }
 
-class Connections extends StatefulWidget {
+class Arrivals extends StatefulWidget {
   final TransitStop stop;
   final String product;
   final String apiURL;
 
-  const Connections({super.key, required this.stop, required this.product, required this.apiURL});
+  const Arrivals({super.key, required this.stop, required this.product, required this.apiURL});
 
   @override
-  State<Connections> createState() => _ConnectionsState();
+  State<Arrivals> createState() => _ArrivalsState();
 }
 
-class _ConnectionsState extends State<Connections> {
+class _ArrivalsState extends State<Arrivals> {
   List<Trip> trips = [];
 
   @override
@@ -195,9 +196,9 @@ class _ConnectionsState extends State<Connections> {
                               ? productImage[widget.product]!
                               : "assets/product/placeholder.png"
                       ),
-                      title: Text(widget.stop.products.toMap()[widget.product]!),
+                      title: Text("${trip.line.name} nach ${trip.provenance}"),
                       subtitle: Text(
-                          "Nach ${trip.provenance} um ${DateFormat("HH:mm").format(trip.getPlannedDateTime()!.toLocal())} "
+                          "Um ${DateFormat("HH:mm").format(trip.getPlannedDateTime()!.toLocal())} "
                               "${trip.delay != null && trip.delay != 0 ? "(${trip.delay!.isNegative ? '' : '+'}${trimZero(trip.delay! / 60)}) " : ""}"
                               "Uhr"
                       ),
@@ -212,11 +213,11 @@ class _ConnectionsState extends State<Connections> {
   }
 }
 
-class Detail extends StatelessWidget {
+class Lines extends StatelessWidget {
   final TransitStop stop;
   final String apiURL;
 
-  const Detail({super.key, required this.stop, required this.apiURL});
+  const Lines({super.key, required this.stop, required this.apiURL});
 
   @override
   Widget build(BuildContext context) {
@@ -234,7 +235,7 @@ class Detail extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => Connections(apiURL: apiURL, stop: stop, product: prod),
+                      builder: (context) => Arrivals(apiURL: apiURL, stop: stop, product: prod),
                     ),
                   );
                 },
@@ -338,7 +339,7 @@ class _AbfahrtenScreenState extends State<AbfahrtenScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => Detail(apiURL: settings.apiURL, stop: item),
+                          builder: (context) => Lines(apiURL: settings.apiURL, stop: item),
                         ),
                       );
                     },

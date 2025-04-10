@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../main.dart';
@@ -41,11 +42,25 @@ class AppSettings extends ChangeNotifier {
     }
   }
 
+  // App Theme
+  bool _shouldBeDark = true;
+  bool get isDarkMode => _shouldBeDark;
+  ThemeData get theme => _shouldBeDark ? ThemeData.dark() : ThemeData.light();
+
+  void setDarkTheme(bool value) {
+    if (_shouldBeDark != value) {
+      _shouldBeDark = value;
+      notifyListeners();
+      _saveSettings();
+    }
+  }
+
   Future<void> loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     _currentDataServer = prefs.getString('dataServer') ?? defaultDataServer;
     _searchRadius = prefs.getInt('searchRadius') ?? 300;
     _loadOnStart = prefs.getBool('loadOnStart') ?? true;
+    _shouldBeDark = prefs.getBool('shouldBeDark') ?? true;
     notifyListeners();
   }
 
@@ -54,5 +69,6 @@ class AppSettings extends ChangeNotifier {
     await prefs.setString('dataServer', _currentDataServer);
     await prefs.setInt('searchRadius', _searchRadius);
     await prefs.setBool('loadOnStart', _loadOnStart);
+    await prefs.setBool('shouldBeDark', _shouldBeDark);
   }
 }
