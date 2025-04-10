@@ -32,34 +32,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
       isScrollControlled: true,
       elevation: 5,
       context: context,
-      builder: (context) => SizedBox(
-        height: MediaQuery.of(context).size.width * 0.5,
-        width: MediaQuery.of(context).size.height * 0.5,
-        child: Padding(
-          padding: EdgeInsets.only(
-            top: 15,
-            left: 15,
-            right: 15,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 15,
-          ),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              spacing: 10,
-              children: [
-                Text("Please select API server"),
-                for (final dservID in dataServers.keys)
-                  ElevatedButton(onPressed: () {
-                    final settings = Provider.of<AppSettings>(context, listen: false);
-                    settings.setDataServer(dservID);
-                    setState(() {
-                      apiURLKey = dservID;
-                    });
-                    Navigator.pop(context);
-                  }, child: Text(dservID)),
-              ],
+      builder: (context) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.of(context).size.width * 0.5,
+          width: MediaQuery.of(context).size.height * 0.5,
+          child: Padding(
+            padding: EdgeInsets.only(
+              top: 15,
+              left: 15,
+              right: 15,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 15,
             ),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: 10,
+                children: [
+                  Text("Please select API server"),
+                  for (final dservID in dataServers.keys)
+                    ElevatedButton(onPressed: () {
+                      final settings = Provider.of<AppSettings>(context, listen: false);
+                      settings.setDataServer(dservID);
+                      setState(() {
+                        apiURLKey = dservID;
+                      });
+                      Navigator.pop(context);
+                    }, child: Text(dservID)),
+                ],
+              ),
+            )
           )
         )
       )
@@ -74,39 +76,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
       elevation: 5,
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => SizedBox(
-          height: MediaQuery.of(context).size.width * 0.5,
-          width: MediaQuery.of(context).size.height * 0.5,
-          child: Padding(
-            padding: EdgeInsets.only(
-              top: 15,
-              left: 15,
-              right: 15,
-              bottom: MediaQuery.of(context).viewInsets.bottom + 15,
-            ),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text("Select Search Radius", style: TextStyle(fontSize: 20),),
-                  SizedBox(height: 15),
-                  Text("Current Radius: $localSearchRadius"),
-                  SizedBox(height: 25),
-                  Slider(
-                    value: localSearchRadius.toDouble(),
-                    min: minDistance.toDouble(),
-                    max: maxDistance.toDouble(),
-                    divisions: 40,
-                    label: localSearchRadius.toString(),
-                    onChanged: (double value) {
-                      setModalState(() {
-                        localSearchRadius = value.toInt();
-                      });
-                    },
-                  ),
-                ],
+        builder: (context, setModalState) => SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(context).size.width * 0.5,
+            width: MediaQuery.of(context).size.height * 0.5,
+            child: Padding(
+              padding: EdgeInsets.only(
+                top: 15,
+                left: 15,
+                right: 15,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 15,
               ),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text("Select Search Radius", style: TextStyle(fontSize: 20),),
+                    SizedBox(height: 15),
+                    Text("Current Radius: $localSearchRadius"),
+                    SizedBox(height: 25),
+                    Slider(
+                      value: localSearchRadius.toDouble(),
+                      min: minDistance.toDouble(),
+                      max: maxDistance.toDouble(),
+                      divisions: 40,
+                      label: localSearchRadius.toString(),
+                      onChanged: (double value) {
+                        setModalState(() {
+                          localSearchRadius = value.toInt();
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              )
             )
           )
         )
