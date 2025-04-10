@@ -197,9 +197,9 @@ class _ArrivalsState extends State<Arrivals> {
                               ? productImage[widget.product]!
                               : "assets/product/placeholder.png"
                       ),
-                      title: Text(widget.stop.products.toMap()[widget.product]!),
+                      title: Text("${trip.line.name} nach ${trip.provenance}"),
                       subtitle: Text(
-                          "Nach ${trip.provenance} um ${DateFormat("HH:mm").format(trip.getPlannedDateTime()!.toLocal())} "
+                          "Um ${DateFormat("HH:mm").format(trip.getPlannedDateTime()!.toLocal())} "
                               "${trip.delay != null && trip.delay != 0 ? "(${trip.delay!.isNegative ? '' : '+'}${trimZero(trip.delay! / 60)}) " : ""}"
                               "Uhr"
                       ),
