@@ -36,4 +36,6 @@ flutter:
     - assets/product/bus.png
     - assets/product/sbahn.png
     - assets/product/ubahn.png
+    - assets/product/tram.png
+    - assets/product/ferry.png
     - assets/product/placeholder.png

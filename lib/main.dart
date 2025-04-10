@@ -31,6 +31,8 @@ const Map<String, String> productImage = {
   "bus": "assets/product/bus.png",
   "suburban": "assets/product/sbahn.png",
   "subway": "assets/product/ubahn.png",
+  "tram": "assets/product/tram.png",
+  "ferry": "assets/product/ferry.png",
 };
 
 const Map<String, String> dataServers = {
