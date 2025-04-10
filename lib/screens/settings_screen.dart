@@ -17,6 +17,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String apiURLKey;
   late int searchRadius;
   late bool loadOnStart;
+  late bool isDarkMode;
 
   @override
   void initState() {
@@ -25,6 +26,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     apiURLKey = settingData.currentDataServer;
     searchRadius = settingData.searchRadius;
     loadOnStart = settingData.loadOnStart;
+    isDarkMode = settingData.isDarkMode;
   }
 
   void _showAPIServerSettings(BuildContext context) {
@@ -125,6 +127,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final settingData = Provider.of<AppSettings>(context, listen: false);
     return Scaffold(
       appBar: AppBar(title: Text('Settings')),
       body: SettingsList(
@@ -145,17 +148,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onPressed: (context) => _showSearchRadiusSettings(context),
               ),
               SettingsTile.switchTile(
-                title: Text('Load Stops on App Start'),
+                title: Text('Load stops on start'),
                 initialValue: loadOnStart,
                 leading: Icon(Icons.search),
                 onToggle: (value) {
-                  final settingData = Provider.of<AppSettings>(context, listen: false);
                   settingData.setLoadOnStart(value);
                   setState(() {
                     loadOnStart = value;
                   });
                 },
-              )
+              ),
+              SettingsTile.switchTile(
+                title: Text("Use Dark Mode?"),
+                initialValue: isDarkMode,
+                leading: Icon(isDarkMode ? Icons.dark_mode : Icons.light_mode_outlined),
+                onToggle: (value) {
+                  settingData.setDarkTheme(value);
+                  setState(() {
+                    isDarkMode = value;
+                  });
+                },
+              ),
             ],
           ),
         ],
