@@ -138,18 +138,18 @@ class _StatefulWrapperState extends State<StatefulWrapper> {
   }
 }
 
-class Connections extends StatefulWidget {
+class Arrivals extends StatefulWidget {
   final TransitStop stop;
   final String product;
   final String apiURL;
 
-  const Connections({super.key, required this.stop, required this.product, required this.apiURL});
+  const Arrivals({super.key, required this.stop, required this.product, required this.apiURL});
 
   @override
-  State<Connections> createState() => _ConnectionsState();
+  State<Arrivals> createState() => _ArrivalsState();
 }
 
-class _ConnectionsState extends State<Connections> {
+class _ArrivalsState extends State<Arrivals> {
   List<Trip> trips = [];
 
   @override
@@ -214,11 +214,11 @@ class _ConnectionsState extends State<Connections> {
   }
 }
 
-class Detail extends StatelessWidget {
+class Lines extends StatelessWidget {
   final TransitStop stop;
   final String apiURL;
 
-  const Detail({super.key, required this.stop, required this.apiURL});
+  const Lines({super.key, required this.stop, required this.apiURL});
 
   @override
   Widget build(BuildContext context) {
@@ -236,7 +236,7 @@ class Detail extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => Connections(apiURL: apiURL, stop: stop, product: prod),
+                      builder: (context) => Arrivals(apiURL: apiURL, stop: stop, product: prod),
                     ),
                   );
                 },
@@ -340,7 +340,7 @@ class _AbfahrtenScreenState extends State<AbfahrtenScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => Detail(apiURL: settings.apiURL, stop: item),
+                          builder: (context) => Lines(apiURL: settings.apiURL, stop: item),
                         ),
                       );
                     },
