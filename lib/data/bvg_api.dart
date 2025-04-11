@@ -28,7 +28,9 @@ Future<List<Trip>> fetchBVGArrivalData(String apiURL, int stopID, int duration, 
 
   if (response.statusCode == 200) {
     List<dynamic> parsed = jsonDecode(response.body)["arrivals"];
-    return parsed.map<Trip>((json) => Trip.fromJson(json)).toList();
+    List<Trip> trips = parsed.map<Trip>((json) => Trip.fromJson(json)).toList();
+    trips.sort((a, b) => a.getPlannedDateTime()!.compareTo(b.getPlannedDateTime()!));
+    return trips.isEmpty ? List<Trip>.empty() : trips;
   } else {
     throw Exception("Failed to load BVG arrival data");
   }
