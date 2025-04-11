@@ -1,4 +1,5 @@
 import 'package:abfahrt_finder/screens/settings_screen.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
@@ -158,45 +159,50 @@ class _CloseStopsState extends State<CloseStops> {
         ],
       ),
       body: futureStops.isEmpty
-          ? Center(
-        child: Text(
-          "Drücke den Knopf um Stops in der Nähe zu finden",
-          style: TextStyle(fontSize: 20),
-          textAlign: TextAlign.center,
-        ),
-      )
-          : RefreshIndicator(
-        key: _refreshIndicatorKey,
-        onRefresh: () => _fetchStops(context, false),
-        child: CustomScrollView(
-          physics: AlwaysScrollableScrollPhysics(),
-          slivers: <Widget>[
-            SliverList.builder(
-              itemCount: futureStops.length,
-              itemBuilder: (context, index) {
-                final item = futureStops[index];
-                final stationItem = StationItem(
-                  item.name,
-                  "${item.distance.toString()}m",
-                );
-                return ListTile(
-                  title: stationItem.buildTitle(context),
-                  subtitle: stationItem.buildSubtitle(context),
-                  onTap: () {
-                    final settings = Provider.of<AppSettings>(context, listen: false);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ProductsScreen(apiURL: settings.apiURL, stop: item),
-                      ),
-                    );
-                  },
-                );
-              },
+        ? Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 25.0,
             ),
-          ],
+            child: Text(
+              "Drücke den Knopf um Stops in der Nähe zu finden",
+              style: TextStyle(fontSize: 20),
+              textAlign: TextAlign.center,
+            ),
+          )
+        )
+        : RefreshIndicator(
+          key: _refreshIndicatorKey,
+          onRefresh: () => _fetchStops(context, false),
+          child: CustomScrollView(
+            physics: AlwaysScrollableScrollPhysics(),
+            slivers: <Widget>[
+              SliverList.builder(
+                itemCount: futureStops.length,
+                itemBuilder: (context, index) {
+                  final item = futureStops[index];
+                  final stationItem = StationItem(
+                    item.name,
+                    "${item.distance.toString()}m",
+                  );
+                  return ListTile(
+                    title: stationItem.buildTitle(context),
+                    subtitle: stationItem.buildSubtitle(context),
+                    onTap: () {
+                      final settings = Provider.of<AppSettings>(context, listen: false);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ProductsScreen(apiURL: settings.apiURL, stop: item),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
         ),
-      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           if (futureStops.isNotEmpty) {
