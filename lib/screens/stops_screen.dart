@@ -95,6 +95,25 @@ class _CloseStopsState extends State<CloseStops> {
     if (loadingProvider.loading) {
       return;
     }
+
+    final List<ConnectivityResult> connectivityResult = await (Connectivity().checkConnectivity());
+    if (!connectivityResult.contains(ConnectivityResult.mobile) && !connectivityResult.contains(ConnectivityResult.wifi) && !connectivityResult.contains(ConnectivityResult.ethernet)) {
+      if (!context.mounted) {
+        return Future.value(null);
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No connection to the internet!', textAlign: TextAlign.center),
+          duration: Duration(seconds: 5),
+          width: 250,
+          padding: EdgeInsets.symmetric(vertical: 6),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+        ),
+      );
+      return Future.value(null);
+    }
+
     if (showLoading) {
       loadingProvider.setLoad(true);
     }
