@@ -22,7 +22,7 @@ Future<List<TransitStop>> fetchBVGStopData(String apiURL, double latitude, doubl
 Future<List<Trip>> fetchBVGArrivalData(String apiURL, int stopID, int duration, int maxResults) async {
   final response = await http.get(
     Uri.parse(
-        "$apiURL/stops/$stopID/arrivals?duration=$duration&results=$maxResults"
+        "$apiURL/stops/$stopID/arrivals?when=${DateTime.now().add(Duration(minutes: -1)).toIso8601String()}&duration=$duration&results=$maxResults"
     ),
   );
 
