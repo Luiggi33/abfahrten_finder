@@ -29,7 +29,7 @@ class _DeparturesScreenState extends State<DeparturesScreen> {
   Future<void> loadTrips() async {
     try {
       final settings = Provider.of<AppSettings>(context, listen: false);
-      final fetchedTrips = await fetchBVGArrivalData(settings.apiURL, int.parse(widget.stop.id), 20, 30);
+      final fetchedTrips = await fetchArrivalData(settings.apiURL, int.parse(widget.stop.id), 20, 30);
       setState(() {
         trips = fetchedTrips
             .where((e) => e.line.product == widget.product)

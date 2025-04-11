@@ -106,7 +106,7 @@ class _CloseStopsState extends State<CloseStops> {
         return;
       }
       final settings = Provider.of<AppSettings>(context, listen: false);
-      final stops = await fetchBVGStopData(settings.apiURL, pos.latitude, pos.longitude, settings.searchRadius);
+      final stops = await fetchStopData(settings.apiURL, pos.latitude, pos.longitude, settings.searchRadius);
       setState(() {
         futureStops = stops;
       });

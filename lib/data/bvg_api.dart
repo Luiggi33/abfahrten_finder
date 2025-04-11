@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../main.dart';
 
-Future<List<TransitStop>> fetchBVGStopData(String apiURL, double latitude, double longitude, int searchRadius) async {
+Future<List<TransitStop>> fetchStopData(String apiURL, double latitude, double longitude, int searchRadius) async {
   final response = await http.get(
     Uri.parse(
       "$apiURL/locations/nearby?latitude=$latitude&longitude=$longitude&distance=$maxDistance&linesOfStops=true",
@@ -19,7 +19,7 @@ Future<List<TransitStop>> fetchBVGStopData(String apiURL, double latitude, doubl
   }
 }
 
-Future<List<Trip>> fetchBVGArrivalData(String apiURL, int stopID, int duration, int maxResults) async {
+Future<List<Trip>> fetchArrivalData(String apiURL, int stopID, int duration, int maxResults) async {
   final response = await http.get(
     Uri.parse(
         "$apiURL/stops/$stopID/arrivals?when=${DateTime.now().add(Duration(minutes: -1)).toIso8601String()}&duration=$duration&results=$maxResults"
