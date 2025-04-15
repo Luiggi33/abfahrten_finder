@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../main.dart';
 
-Future<List<TransitStop>> fetchBVGStopData(String apiURL, double latitude, double longitude, int searchRadius) async {
+Future<List<TransitStop>> fetchStopData(String apiURL, double latitude, double longitude, int searchRadius) async {
   final response = await http.get(
     Uri.parse(
       "$apiURL/locations/nearby?latitude=$latitude&longitude=$longitude&distance=$maxDistance&linesOfStops=true",
@@ -19,16 +19,18 @@ Future<List<TransitStop>> fetchBVGStopData(String apiURL, double latitude, doubl
   }
 }
 
-Future<List<Trip>> fetchBVGArrivalData(String apiURL, int stopID, int duration, int maxResults) async {
+Future<List<Trip>> fetchArrivalData(String apiURL, int stopID, int duration, int maxResults) async {
   final response = await http.get(
     Uri.parse(
-        "$apiURL/stops/$stopID/arrivals?duration=$duration&results=$maxResults"
+        "$apiURL/stops/$stopID/arrivals?when=${DateTime.now().add(Duration(minutes: -1)).toIso8601String()}&duration=$duration&results=$maxResults"
     ),
   );
 
   if (response.statusCode == 200) {
     List<dynamic> parsed = jsonDecode(response.body)["arrivals"];
-    return parsed.map<Trip>((json) => Trip.fromJson(json)).toList();
+    List<Trip> trips = parsed.map<Trip>((json) => Trip.fromJson(json)).toList();
+    trips.sort((a, b) => a.getPlannedDateTime()!.compareTo(b.getPlannedDateTime()!));
+    return trips.isEmpty ? List<Trip>.empty() : trips;
   } else {
     throw Exception("Failed to load BVG arrival data");
   }
