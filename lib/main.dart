@@ -50,7 +50,7 @@ class MyApp extends StatelessWidget {
     final settings = Provider.of<AppSettings>(context);
     initializeDateFormatting("de_DE");
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Abfahrt Finder',
       theme: settings.theme,
       scrollBehavior: const MaterialScrollBehavior().copyWith(
         dragDevices: PointerDeviceKind.values.toSet(),
