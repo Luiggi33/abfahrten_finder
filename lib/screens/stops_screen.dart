@@ -40,6 +40,25 @@ Future<Position> _determinePosition() async {
   return await Geolocator.getCurrentPosition();
 }
 
+abstract class ListItem {
+  Widget buildTitle(BuildContext context);
+
+  Widget buildSubtitle(BuildContext context);
+}
+
+class StationItem implements ListItem {
+  final String name;
+  final num distance;
+
+  StationItem(this.name, this.distance);
+
+  @override
+  Widget buildTitle(BuildContext context) => Text(name);
+
+  @override
+  Widget buildSubtitle(BuildContext context) => Text("Distanz: ${distance}m");
+}
+
 class ProductsScreen extends StatelessWidget {
   final TransitStop stop;
   final String apiURL;
