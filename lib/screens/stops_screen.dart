@@ -251,14 +251,15 @@ class _CloseStopsState extends State<CloseStops> {
                 itemCount: futureStops.length,
                 itemBuilder: (context, index) {
                   final item = futureStops[index];
-                  final stationItem = StationItem(
-                    item.name,
-                    "${item.distance.toString()}m",
-                  );
+                  final distanceBetween = Geolocator.distanceBetween(currentPos.latitude, currentPos.longitude, item.location.latitude, item.location.longitude);
                   final bearingBetween = Geolocator.bearingBetween(currentPos.latitude, currentPos.longitude, item.location.latitude, item.location.longitude);
-                  var rotationAngle = bearingBetween - (userHeading ?? 0);
+                  double rotationAngle = bearingBetween - (userHeading ?? 0);
                   if (rotationAngle > 180) rotationAngle -= 360;
                   if (rotationAngle < -180) rotationAngle += 360;
+                  final stationItem = StationItem(
+                    item.name,
+                    distanceBetween.ceil(),
+                  );
                   return ListTile(
                     leading: Transform.rotate(
                       angle: rotationAngle * (pi / 180),
