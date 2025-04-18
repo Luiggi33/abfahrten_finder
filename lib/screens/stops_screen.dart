@@ -1,6 +1,10 @@
+import 'dart:async';
+import 'dart:math';
+
 import 'package:abfahrt_finder/screens/settings_screen.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 
@@ -34,6 +38,25 @@ Future<Position> _determinePosition() async {
   }
 
   return await Geolocator.getCurrentPosition();
+}
+
+abstract class ListItem {
+  Widget buildTitle(BuildContext context);
+
+  Widget buildSubtitle(BuildContext context);
+}
+
+class StationItem implements ListItem {
+  final String name;
+  final num distance;
+
+  StationItem(this.name, this.distance);
+
+  @override
+  Widget buildTitle(BuildContext context) => Text(name);
+
+  @override
+  Widget buildSubtitle(BuildContext context) => Text("Distanz: ${distance}m");
 }
 
 class ProductsScreen extends StatelessWidget {
@@ -79,6 +102,10 @@ class CloseStops extends StatefulWidget {
 
 class _CloseStopsState extends State<CloseStops> {
   List<TransitStop> futureStops = [];
+  late Position currentPos;
+  late double? userHeading;
+  late StreamSubscription<CompassEvent> compassEvent;
+  late StreamSubscription<Position> positionEvent;
 
   @override
   void initState() {
@@ -86,9 +113,45 @@ class _CloseStopsState extends State<CloseStops> {
     final settings = Provider.of<AppSettings>(context, listen: false);
     if (settings.loadOnStart) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _fetchStops(context, true);
+        _fetchStops(context, true).catchError((e) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$e', textAlign: TextAlign.center),
+              duration: Duration(seconds: 3),
+              width: 250,
+              padding: EdgeInsets.symmetric(vertical: 6),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+            ),
+          );
+        });
       });
     }
+    positionEvent = Geolocator.getPositionStream(
+        locationSettings: LocationSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: 5,
+        )
+    ).listen((Position position) {
+      setState(() {
+        currentPos = position;
+      });
+    });
+    compassEvent = FlutterCompass.events!.listen((CompassEvent event) {
+      setState(() {
+        userHeading = event.heading;
+        if (userHeading != null) {
+          userHeading = userHeading! < 0 ? (360 + userHeading!) : userHeading!;
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    compassEvent.cancel();
+    super.dispose();
   }
 
   Future<void> _fetchStops(BuildContext context, bool showLoading) async {
@@ -102,17 +165,7 @@ class _CloseStopsState extends State<CloseStops> {
       if (!context.mounted) {
         return Future.value(null);
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('No connection to the internet!', textAlign: TextAlign.center),
-          duration: Duration(seconds: 5),
-          width: 250,
-          padding: EdgeInsets.symmetric(vertical: 6),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
-        ),
-      );
-      return Future.value(null);
+      return Future.error("No connection to the internet");
     }
 
     if (showLoading) {
@@ -129,10 +182,11 @@ class _CloseStopsState extends State<CloseStops> {
       final stops = await fetchStopData(settings.apiURL, pos.latitude, pos.longitude, settings.searchRadius);
       setState(() {
         futureStops = stops;
+        currentPos = pos;
       });
     } catch (error) {
-      print("Error fetching stops: $error");
       loadingProvider.setLoad(false);
+      return Future.error(error);
     } finally {
       if (context.mounted && showLoading) {
         loadingProvider.setLoad(false);
@@ -173,7 +227,23 @@ class _CloseStopsState extends State<CloseStops> {
         )
         : RefreshIndicator(
           key: _refreshIndicatorKey,
-          onRefresh: () => _fetchStops(context, false),
+          onRefresh: () async {
+            try {
+              return await _fetchStops(context, true);
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('$e', textAlign: TextAlign.center),
+                  duration: Duration(seconds: 3),
+                  width: 250,
+                  padding: EdgeInsets.symmetric(vertical: 6),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+                ),
+              );
+              return Future<void>.value();
+            }
+          },
           child: CustomScrollView(
             physics: AlwaysScrollableScrollPhysics(),
             slivers: <Widget>[
@@ -181,11 +251,20 @@ class _CloseStopsState extends State<CloseStops> {
                 itemCount: futureStops.length,
                 itemBuilder: (context, index) {
                   final item = futureStops[index];
+                  final distanceBetween = Geolocator.distanceBetween(currentPos.latitude, currentPos.longitude, item.location.latitude, item.location.longitude);
+                  final bearingBetween = Geolocator.bearingBetween(currentPos.latitude, currentPos.longitude, item.location.latitude, item.location.longitude);
+                  double rotationAngle = bearingBetween - (userHeading ?? 0);
+                  if (rotationAngle > 180) rotationAngle -= 360;
+                  if (rotationAngle < -180) rotationAngle += 360;
                   final stationItem = StationItem(
                     item.name,
-                    "${item.distance.toString()}m",
+                    distanceBetween.ceil(),
                   );
                   return ListTile(
+                    leading: Transform.rotate(
+                      angle: rotationAngle * (pi / 180),
+                      child: Icon(Icons.arrow_upward, color: Colors.blue, size: 24),
+                    ),
                     title: stationItem.buildTitle(context),
                     subtitle: stationItem.buildSubtitle(context),
                     onTap: () {
@@ -208,7 +287,19 @@ class _CloseStopsState extends State<CloseStops> {
           if (futureStops.isNotEmpty) {
             _refreshIndicatorKey.currentState?.show();
           } else {
-            _fetchStops(context, true);
+            _fetchStops(context, true).catchError((e) {
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('$e', textAlign: TextAlign.center),
+                  duration: Duration(seconds: 3),
+                  width: 250,
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+                ),
+              );
+            });
           }
         },
         tooltip: 'Search Location',

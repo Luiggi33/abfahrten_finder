@@ -50,7 +50,7 @@ class MyApp extends StatelessWidget {
     final settings = Provider.of<AppSettings>(context);
     initializeDateFormatting("de_DE");
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Abfahrt Finder',
       theme: settings.theme,
       scrollBehavior: const MaterialScrollBehavior().copyWith(
         dragDevices: PointerDeviceKind.values.toSet(),
@@ -59,23 +59,4 @@ class MyApp extends StatelessWidget {
       home: CloseStops(),
     );
   }
-}
-
-abstract class ListItem {
-  Widget buildTitle(BuildContext context);
-
-  Widget buildSubtitle(BuildContext context);
-}
-
-class StationItem implements ListItem {
-  final String name;
-  final String distance;
-
-  StationItem(this.name, this.distance);
-
-  @override
-  Widget buildTitle(BuildContext context) => Text(name);
-
-  @override
-  Widget buildSubtitle(BuildContext context) => Text("Distanz: $distance");
 }
