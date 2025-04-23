@@ -151,6 +151,7 @@ class _CloseStopsState extends State<CloseStops> {
   @override
   void dispose() {
     compassEvent.cancel();
+    positionEvent.cancel();
     super.dispose();
   }
 
