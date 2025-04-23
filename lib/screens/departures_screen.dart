@@ -1,8 +1,11 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import '../data/bvg_api.dart';
+import '../data/api_handler.dart';
 import '../main.dart';
 import '../provider/app_settings.dart';
 
@@ -19,24 +22,68 @@ class DeparturesScreen extends StatefulWidget {
 
 class _DeparturesScreenState extends State<DeparturesScreen> {
   List<Trip> trips = [];
+  double currentSecondPercent = 0;
+  bool hasRun = false;
+  Timer? lerpTimer;
 
   @override
   void initState() {
     super.initState();
     loadTrips();
+    setPercentToNextMinute();
+    lerpTimer = Timer.periodic(Duration(milliseconds: 20), (_) {
+      final now = DateTime.now();
+
+      if (now.second == 0) {
+        if (!hasRun) {
+          loadTrips();
+          hasRun = true;
+        }
+      } else {
+        hasRun = false;
+      }
+
+      updateLerp();
+    });
+  }
+
+  @override
+  void dispose() {
+    lerpTimer?.cancel();
+    super.dispose();
+  }
+
+  void setPercentToNextMinute() {
+    final now = DateTime.now();
+    int seconds = now.second;
+    int milliseconds = now.millisecond;
+    double totalElapsedMs = (seconds.toDouble() * 1000) + milliseconds.toDouble();
+
+    currentSecondPercent = totalElapsedMs / 60000;
+  }
+
+  void updateLerp() {
+    setPercentToNextMinute();
+
+    setState(() {
+      currentSecondPercent = currentSecondPercent + (currentSecondPercent - currentSecondPercent) * 0.1;
+    });
   }
 
   Future<void> loadTrips() async {
     try {
       final settings = Provider.of<AppSettings>(context, listen: false);
-      final fetchedTrips = await fetchArrivalData(settings.apiURL, int.parse(widget.stop.id), 20, 30);
+      final products = Products.fromString(widget.product);
+      final fetchedTrips = await fetchProductArrivalData(settings.apiURL, int.parse(widget.stop.id), 20, 30, products);
+
+      if (listEquals(fetchedTrips, trips)) {
+        return Future.value(null);
+      }
       setState(() {
-        trips = fetchedTrips
-            .where((e) => e.line.product == widget.product)
-            .toList();
+        trips = fetchedTrips;
       });
     } catch (e) {
-      print("Error loading trips: $e");
+      return Future.error(e);
     }
   }
 
@@ -54,6 +101,9 @@ class _DeparturesScreenState extends State<DeparturesScreen> {
             },
             child: CustomScrollView(
                 slivers: <Widget>[
+                  SliverToBoxAdapter(
+                    child: LinearProgressIndicator(value: currentSecondPercent),
+                  ),
                   SliverList.builder(
                     itemCount: trips.length,
                     itemBuilder: (context, index) {
