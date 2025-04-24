@@ -8,7 +8,7 @@ import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 
-import '../data/bvg_api.dart';
+import '../data/api_handler.dart';
 import '../main.dart';
 import '../provider/app_settings.dart';
 import '../provider/loading_provider.dart';
@@ -151,6 +151,7 @@ class _CloseStopsState extends State<CloseStops> {
   @override
   void dispose() {
     compassEvent.cancel();
+    positionEvent.cancel();
     super.dispose();
   }
 

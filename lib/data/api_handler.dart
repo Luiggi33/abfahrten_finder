@@ -15,14 +15,14 @@ Future<List<TransitStop>> fetchStopData(String apiURL, double latitude, double l
     List<dynamic> parsed = jsonDecode(response.body);
     return parsed.map<TransitStop>((json) => TransitStop.fromJson(json)).where((e) => e.distance < searchRadius).toList();
   } else {
-    throw Exception("Failed to load BVG stop data");
+    throw Exception("Failed to load stop data");
   }
 }
 
 Future<List<Trip>> fetchArrivalData(String apiURL, int stopID, int duration, int maxResults) async {
   final response = await http.get(
     Uri.parse(
-        "$apiURL/stops/$stopID/arrivals?when=${DateTime.now().add(Duration(minutes: -1)).toIso8601String()}&duration=$duration&results=$maxResults"
+        "$apiURL/stops/$stopID/arrivals?when=${DateTime.now().subtract(Duration(minutes: 1)).toIso8601String()}&duration=$duration&results=$maxResults"
     ),
   );
 
@@ -32,7 +32,25 @@ Future<List<Trip>> fetchArrivalData(String apiURL, int stopID, int duration, int
     trips.sort((a, b) => a.getPlannedDateTime()!.compareTo(b.getPlannedDateTime()!));
     return trips.isEmpty ? List<Trip>.empty() : trips;
   } else {
-    throw Exception("Failed to load BVG arrival data");
+    throw Exception("Failed to load arrival data");
+  }
+}
+
+Future<List<Trip>> fetchProductArrivalData(String apiURL, int stopID, int duration, int maxResults, Products products) async {
+  String productString = products.toQueryParms();
+  final response = await http.get(
+    Uri.parse(
+        "$apiURL/stops/$stopID/arrivals?when=${DateTime.now().subtract(Duration(minutes: 1)).toIso8601String()}&duration=$duration&results=$maxResults$productString"
+    ),
+  );
+
+  if (response.statusCode == 200) {
+    List<dynamic> parsed = jsonDecode(response.body)["arrivals"];
+    List<Trip> trips = parsed.map<Trip>((json) => Trip.fromJson(json)).toList();
+    trips.sort((a, b) => a.getPlannedDateTime()!.compareTo(b.getPlannedDateTime()!));
+    return trips.isEmpty ? List<Trip>.empty() : trips;
+  } else {
+    throw Exception("Failed to load arrival data");
   }
 }
 
@@ -88,6 +106,15 @@ class Trip {
     this.destination,
     required this.cancelled,
   });
+
+  // TODO: revisit at some point
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+          other is Trip && tripId == other.tripId;
+
+  @override
+  int get hashCode => tripId.hashCode;
 
   factory Trip.fromJson(Map<String, dynamic> json) {
     List<Remark> remarksList = [];
@@ -467,6 +494,18 @@ class Products {
     required this.regional,
   });
 
+  factory Products.fromString(String type) {
+    return Products(
+      suburban: type == 'suburban',
+      subway: type == 'subway',
+      tram: type == 'tram',
+      bus: type == 'bus',
+      ferry: type == 'ferry',
+      express: type == 'express',
+      regional: type == 'regional',
+    );
+  }
+
   factory Products.fromJson(Map<String, dynamic> json) {
     return Products(
       suburban: json['suburban'],
@@ -503,6 +542,24 @@ class Products {
       map["regional"] = "Regional";
     }
     return map;
+  }
+
+  String toQueryParms() {
+    final params = <String, bool>{
+      'suburban': suburban,
+      'subway': subway,
+      'tram': tram,
+      'bus': bus,
+      'ferry': ferry,
+      'express': express,
+      'regional': regional,
+    };
+
+    final query = params.entries
+        .map((entry) => '${entry.key}=${entry.value}')
+        .join('&');
+
+    return query;
   }
 
   Map<String, dynamic> toJson() {
