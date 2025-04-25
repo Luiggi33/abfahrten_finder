@@ -74,7 +74,7 @@ class _DeparturesScreenState extends State<DeparturesScreen> {
     try {
       final settings = Provider.of<AppSettings>(context, listen: false);
       final products = Products.fromString(widget.product);
-      final fetchedTrips = await fetchProductArrivalData(settings.apiURL, int.parse(widget.stop.id), 20, 30, products);
+      final fetchedTrips = await fetchProductArrivalData(settings.apiURL, settings.arrivalOffset, int.parse(widget.stop.id), 20, 30, products);
 
       if (listEquals(fetchedTrips, trips)) {
         return Future.value(null);
