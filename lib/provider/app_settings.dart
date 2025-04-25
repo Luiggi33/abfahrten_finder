@@ -54,12 +54,25 @@ class AppSettings extends ChangeNotifier {
     }
   }
 
+  // Arrival Offset
+  int _arrivalOffset = -1;
+  int get arrivalOffset => _arrivalOffset;
+
+  void setArrivalOffset(int value) {
+    if (_arrivalOffset != value) {
+      _arrivalOffset = value;
+      notifyListeners();
+      _saveSettings();
+    }
+  }
+
   Future<void> loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     _currentDataServer = prefs.getString('dataServer') ?? defaultDataServer;
     _searchRadius = prefs.getInt('searchRadius') ?? 300;
     _loadOnStart = prefs.getBool('loadOnStart') ?? true;
     _shouldBeDark = prefs.getBool('shouldBeDark') ?? true;
+    _arrivalOffset = prefs.getInt('arrivalOffset') ?? -1;
     notifyListeners();
   }
 
@@ -69,5 +82,6 @@ class AppSettings extends ChangeNotifier {
     await prefs.setInt('searchRadius', _searchRadius);
     await prefs.setBool('loadOnStart', _loadOnStart);
     await prefs.setBool('shouldBeDark', _shouldBeDark);
+    await prefs.setInt('arrivalOffset', _arrivalOffset);
   }
 }

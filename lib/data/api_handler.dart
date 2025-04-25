@@ -19,10 +19,10 @@ Future<List<TransitStop>> fetchStopData(String apiURL, double latitude, double l
   }
 }
 
-Future<List<Trip>> fetchArrivalData(String apiURL, int stopID, int duration, int maxResults) async {
+Future<List<Trip>> fetchArrivalData(String apiURL, int arrivalOffset, int stopID, int duration, int maxResults) async {
   final response = await http.get(
     Uri.parse(
-        "$apiURL/stops/$stopID/arrivals?when=${DateTime.now().subtract(Duration(minutes: 1)).toUtc().toIso8601String()}&duration=$duration&results=$maxResults"
+        "$apiURL/stops/$stopID/arrivals?when=${DateTime.now().add(Duration(minutes: arrivalOffset)).toUtc().toIso8601String()}&duration=$duration&results=$maxResults"
     ),
   );
 
@@ -36,11 +36,11 @@ Future<List<Trip>> fetchArrivalData(String apiURL, int stopID, int duration, int
   }
 }
 
-Future<List<Trip>> fetchProductArrivalData(String apiURL, int stopID, int duration, int maxResults, Products products) async {
+Future<List<Trip>> fetchProductArrivalData(String apiURL, int arrivalOffset, int stopID, int duration, int maxResults, Products products) async {
   String productString = products.toQueryParms();
   final response = await http.get(
     Uri.parse(
-        "$apiURL/stops/$stopID/arrivals?when=${DateTime.now().subtract(Duration(minutes: 1)).toUtc().toIso8601String()}&duration=$duration&results=$maxResults$productString"
+        "$apiURL/stops/$stopID/arrivals?when=${DateTime.now().add(Duration(minutes: arrivalOffset)).toUtc().toIso8601String()}&duration=$duration&results=$maxResults$productString"
     ),
   );
 

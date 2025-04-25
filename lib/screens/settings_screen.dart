@@ -16,6 +16,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   late String apiURLKey;
   late int searchRadius;
+  late int arrivalOffset;
   late bool loadOnStart;
   late bool isDarkMode;
 
@@ -25,6 +26,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final settingData = Provider.of<AppSettings>(context, listen: false);
     apiURLKey = settingData.currentDataServer;
     searchRadius = settingData.searchRadius;
+    arrivalOffset = settingData.arrivalOffset;
     loadOnStart = settingData.loadOnStart;
     isDarkMode = settingData.isDarkMode;
   }
@@ -125,6 +127,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
+  void _showArrivalOffsetSettings(BuildContext context) {
+    final settings = Provider.of<AppSettings>(context, listen: false);
+    int localArrivalOffset = settings.arrivalOffset;
+    showModalBottomSheet(
+        isScrollControlled: true,
+        elevation: 5,
+        context: context,
+        builder: (context) => StatefulBuilder(
+            builder: (context, setModalState) => SafeArea(
+                child: SizedBox(
+                    height: MediaQuery.of(context).size.width * 0.5,
+                    width: MediaQuery.of(context).size.height * 0.5,
+                    child: Padding(
+                        padding: EdgeInsets.only(
+                          top: 15,
+                          left: 15,
+                          right: 15,
+                          bottom: MediaQuery.of(context).viewInsets.bottom + 15,
+                        ),
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text("Select Arrival Offset", style: TextStyle(fontSize: 20),),
+                              SizedBox(height: 10),
+                              Text("Current Arrival Offset: ${localArrivalOffset.isNegative ? localArrivalOffset.toString() : " +$localArrivalOffset"} Mins"),
+                              SizedBox(height: 20),
+                              Slider(
+                                value: localArrivalOffset.toDouble(),
+                                min: -10,
+                                max: 10,
+                                divisions: 20,
+                                label: localArrivalOffset.isNegative ? localArrivalOffset.toString() : "+$localArrivalOffset",
+                                onChanged: (double value) {
+                                  setModalState(() {
+                                    localArrivalOffset = value.toInt();
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        )
+                    )
+                )
+            )
+        )
+    ).then((_) {
+      if (settings.searchRadius == localArrivalOffset) {
+        return;
+      }
+      settings.setArrivalOffset(localArrivalOffset);
+      setState(() {
+        arrivalOffset = localArrivalOffset.toInt();
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final settingData = Provider.of<AppSettings>(context, listen: false);
@@ -146,6 +206,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 description: Text(searchRadius.toString()),
                 leading: Icon(Icons.radar),
                 onPressed: (context) => _showSearchRadiusSettings(context),
+              ),
+              SettingsTile.navigation(
+                title: Text('Arrival Offset'),
+                description: Text("${arrivalOffset.toString()} Minutes"),
+                leading: Icon(arrivalOffset >= 0 ? Icons.update : Icons.history),
+                onPressed: (context) => _showArrivalOffsetSettings(context),
               ),
               SettingsTile.switchTile(
                 title: Text('Load stops on start'),
