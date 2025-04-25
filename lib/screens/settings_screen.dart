@@ -1,5 +1,6 @@
 import 'package:abfahrt_finder/main.dart';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:settings_ui/settings_ui.dart';
 
@@ -13,12 +14,21 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  PackageInfo _packageInfo = PackageInfo(
+    appName: 'Unknown',
+    packageName: 'Unknown',
+    version: 'Unknown',
+    buildNumber: 'Unknown',
+    buildSignature: 'Unknown',
+    installerStore: 'Unknown',
+  );
 
   late String apiURLKey;
   late int searchRadius;
   late int arrivalOffset;
   late bool loadOnStart;
   late bool isDarkMode;
+  late String appVersion;
 
   @override
   void initState() {
@@ -29,6 +39,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     arrivalOffset = settingData.arrivalOffset;
     loadOnStart = settingData.loadOnStart;
     isDarkMode = settingData.isDarkMode;
+    _initPackageInfo();
+  }
+
+  Future<void> _initPackageInfo() async {
+    final info = await PackageInfo.fromPlatform();
+    setState(() {
+      _packageInfo = info;
+    });
   }
 
   void _showAPIServerSettings(BuildContext context) {
@@ -191,6 +209,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       appBar: AppBar(title: Text('Settings')),
       body: SettingsList(
+        platform: DevicePlatform.android,
+        physics: AlwaysScrollableScrollPhysics(),
         sections: [
           SettingsSection(
             title: Text('Common'),
@@ -235,6 +255,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   });
                 },
               ),
+            ],
+          ),
+          SettingsSection(
+            title: Text("App Information"),
+            tiles: [
+              SettingsTile(
+                title: Text("Version"),
+                description: Text("v${_packageInfo.version}"),
+              ),
+              SettingsTile(
+                title: Text("Credits"),
+                description: Text("Main Developer: Luiggi33"),
+              )
             ],
           ),
         ],
