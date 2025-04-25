@@ -74,7 +74,7 @@ class _DeparturesScreenState extends State<DeparturesScreen> {
     try {
       final settings = Provider.of<AppSettings>(context, listen: false);
       final products = Products.fromString(widget.product);
-      final fetchedTrips = await fetchProductArrivalData(settings.apiURL, int.parse(widget.stop.id), 20, 30, products);
+      final fetchedTrips = await fetchProductArrivalData(settings.apiURL, settings.arrivalOffset, int.parse(widget.stop.id), 20, 30, products);
 
       if (listEquals(fetchedTrips, trips)) {
         return Future.value(null);
@@ -110,16 +110,30 @@ class _DeparturesScreenState extends State<DeparturesScreen> {
                       final trip = trips[index];
                       return Card(
                         child: ListTile(
-                          leading: Image.asset(
+                          leading: ColorFiltered(
+                            colorFilter: trip.cancelled ? ColorFilter.matrix(<double>[
+                              0.2126,0.7152,0.0722,0,0,
+                              0.2126,0.7152,0.0722,0,0,
+                              0.2126,0.7152,0.0722,0,0,
+                              0,0,0,1,0,
+                            ]) : ColorFilter.mode(
+                              Colors.transparent,
+                              BlendMode.multiply,
+                            ),
+                            child: Image.asset(
                               productImage[widget.product] != null
-                                  ? productImage[widget.product]!
-                                  : "assets/product/placeholder.png"
+                              ? productImage[widget.product]!
+                                : "assets/product/placeholder.png",
+                            ),
                           ),
-                          title: Text("${trip.line.name} nach ${trip.provenance}"),
+                          title: Text("${trip.line.name} nach ${trip.provenance}",
+                              style: trip.cancelled ? TextStyle(decoration: TextDecoration.lineThrough) : TextStyle()
+                          ),
                           subtitle: Text(
-                              "Um ${DateFormat("HH:mm").format(trip.getPlannedDateTime()!.toLocal())} "
-                                  "${trip.delay != null && trip.delay != 0 ? "(${trip.delay!.isNegative ? '' : '+'}${trimZero(trip.delay! / 60)}) " : ""}"
-                                  "Uhr"
+                            "Um ${DateFormat("HH:mm").format(trip.getPlannedDateTime()!.toLocal())} "
+                              "${trip.delay != null && trip.delay != 0 ? "(${trip.delay!.isNegative ? '' : '+'}${trimZero(trip.delay! / 60)}) " : ""}"
+                              "Uhr",
+                            style: trip.cancelled ? TextStyle(decoration: TextDecoration.lineThrough) : TextStyle()
                           ),
                         ),
                       );

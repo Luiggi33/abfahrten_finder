@@ -26,4 +26,4 @@ Currently, you can check all public transport stations within the VBB network (V
 - [ ] UI improvements
 - [ ] Bottom sheet for trips
 - [ ] Caching/Performance improvements
-- [ ] Show station direction
+- [x] Show station direction
