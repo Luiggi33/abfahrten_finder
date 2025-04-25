@@ -22,11 +22,11 @@ jobs:
 
       - name: Check if version is upped
         run: |
-          if git tag -l "${VERSION}"; then
-            echo "Tag ${VERSION} already exists! Please consider updating pubspec.yaml"
+          if [ -n "$(git tag -l "${{ env.VERSION }}")" ]; then
+            echo "Tag ${{ env.VERSION }} already exists! Please consider updating pubspec.yaml"
             exit 1
           else
-            echo "Tag ${VERSION} does not exist, everything is fine :D"
+            echo "Tag ${{ env.VERSION }} does not exist, everything is fine :D"
           fi
 
       - name: Generate Changelog
