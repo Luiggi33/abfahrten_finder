@@ -1,0 +1,61 @@
+name: "Pull Request Manager"
+
+on:
+  pull_request:
+    branches:
+      - 'main'
+
+jobs:
+  manage-pr:
+    name: Check Version and Comment Changelog
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Extract version from pubspec.yaml
+        id: extract_version
+        run: |
+          version=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
+          echo "VERSION=$version" >> $GITHUB_ENV
+
+      - name: Check if version is upped
+        run: |
+          if git show-ref --tags --verify --quiet "refs/tags/${TAG}"; then
+            echo "Tag ${TAG} already exists! Please consider updating pubspec.yaml"
+            exit 1
+          else
+            echo "Tag ${TAG} does not exist, everything is fine :D"
+          fi
+
+      - name: Generate Changelog
+        uses: smichard/conventional_changelog@2.0.0
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment changelog on pull request
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const changelog = fs.readFileSync('CHANGELOG.md', 'utf8');
+
+            const body = `
+            <details>
+              <summary>📦 Changelog</summary>
+  
+              \`\`\`markdown
+              ${changelog}
+              \`\`\`
+  
+            </details>
+            `;
+
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
