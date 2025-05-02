@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:abfahrt_finder/screens/settings_screen.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_compass/flutter_compass.dart';
@@ -11,6 +10,7 @@ import 'package:provider/provider.dart';
 import '../data/api_handler.dart';
 import '../main.dart';
 import '../provider/app_settings.dart';
+import '../provider/favorites_provider.dart';
 import '../provider/loading_provider.dart';
 import 'departures_screen.dart';
 
@@ -88,6 +88,78 @@ class ProductsScreen extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class LazyProductsScreen extends StatelessWidget {
+  final String stopName;
+  final String stopId;
+  final String apiURL;
+
+  const LazyProductsScreen({super.key, required this.stopName, required this.stopId, required this.apiURL});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(stopName)),
+      body: FutureBuilder<TransitStop>(
+        future: fetchStopData(apiURL, stopId),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Loading station data...'),
+                ],
+              ),
+            );
+          } else if (snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 60, color: Colors.red),
+                  SizedBox(height: 16),
+                  Text('Error loading data: ${snapshot.error}'),
+                  SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('Go Back'),
+                  ),
+                ],
+              ),
+            );
+          } else if (!snapshot.hasData) {
+            return Center(child: Text('No data available'));
+          }
+
+          final stop = snapshot.data!;
+          return Column(
+            children: <Widget>[
+              for (final prod in stop.products.toMap().keys)
+                Card(
+                  child: ListTile(
+                    leading: Image.asset(productImage[prod] != null ? productImage[prod]! : "assets/product/placeholder.png" ),
+                    title: Text(stop.products.toMap()[prod]!),
+                    subtitle: Text("Siehe ${stop.products.toMap()[prod]} Verbindungen"),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DeparturesScreen(apiURL: apiURL, stop: stop, product: prod),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -180,7 +252,7 @@ class _CloseStopsState extends State<CloseStops> {
         return;
       }
       final settings = Provider.of<AppSettings>(context, listen: false);
-      final stops = await fetchStopData(settings.apiURL, pos.latitude, pos.longitude, settings.searchRadius);
+      final stops = await fetchStopsByLocation(settings.apiURL, pos.latitude, pos.longitude, settings.searchRadius);
       setState(() {
         futureStops = stops;
         currentPos = pos;
@@ -199,20 +271,9 @@ class _CloseStopsState extends State<CloseStops> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = Provider.of<AppSettings>(context, listen: false);
+    final favoritesProvider = Provider.of<FavoritesProvider>(context, listen: true);
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text("Abfahrt Finder Demo"),
-        actions: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.settings),
-            tooltip: 'Open settings',
-            onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(builder: (context) => SettingsScreen()));
-            },
-          ),
-        ],
-      ),
       body: futureStops.isEmpty
         ? Center(
           child: Padding(
@@ -252,6 +313,7 @@ class _CloseStopsState extends State<CloseStops> {
                 itemCount: futureStops.length,
                 itemBuilder: (context, index) {
                   final item = futureStops[index];
+                  final isFavorite = favoritesProvider.isFavorite(item.id);
                   final distanceBetween = Geolocator.distanceBetween(currentPos.latitude, currentPos.longitude, item.location.latitude, item.location.longitude);
                   final bearingBetween = Geolocator.bearingBetween(currentPos.latitude, currentPos.longitude, item.location.latitude, item.location.longitude);
                   double rotationAngle = bearingBetween - (userHeading ?? 0);
@@ -266,10 +328,19 @@ class _CloseStopsState extends State<CloseStops> {
                       angle: rotationAngle * (pi / 180),
                       child: Icon(Icons.arrow_upward, color: Colors.blue, size: 24),
                     ),
+                    trailing: IconButton(
+                      icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border),
+                      onPressed: () {
+                        if (isFavorite) {
+                          favoritesProvider.removeFavorite(item.id);
+                        } else {
+                          favoritesProvider.addFavorite(item.id, item.name);
+                        }
+                      },
+                    ),
                     title: stationItem.buildTitle(context),
                     subtitle: stationItem.buildSubtitle(context),
                     onTap: () {
-                      final settings = Provider.of<AppSettings>(context, listen: false);
                       Navigator.push(
                         context,
                         MaterialPageRoute(
