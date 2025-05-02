@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../main.dart';
 
-Future<List<TransitStop>> fetchStopData(String apiURL, double latitude, double longitude, int searchRadius) async {
+Future<List<TransitStop>> fetchStopsByLocation(String apiURL, double latitude, double longitude, int searchRadius) async {
   final response = await http.get(
     Uri.parse(
       "$apiURL/locations/nearby?latitude=$latitude&longitude=$longitude&distance=$maxDistance&linesOfStops=true",
@@ -13,7 +13,21 @@ Future<List<TransitStop>> fetchStopData(String apiURL, double latitude, double l
 
   if (response.statusCode == 200) {
     List<dynamic> parsed = jsonDecode(response.body);
-    return parsed.map<TransitStop>((json) => TransitStop.fromJson(json)).where((e) => e.distance < searchRadius).toList();
+    return parsed.map<TransitStop>((json) => TransitStop.fromJson(json)).where((e) => e.distance! < searchRadius).toList();
+  } else {
+    throw Exception("Failed to load stop data");
+  }
+}
+
+Future<TransitStop> fetchStopData(String apiURL, String stopID) async {
+  final response = await http.get(
+    Uri.parse(
+      "$apiURL/stops/$stopID?linesOfStops=true",
+    ),
+  );
+
+  if (response.statusCode == 200) {
+    return TransitStop.fromJson(jsonDecode(response.body));
   } else {
     throw Exception("Failed to load stop data");
   }
@@ -347,7 +361,7 @@ class TransitStop {
   final Location location;
   final Products products;
   final List<Line> lines;
-  final int distance;
+  final int? distance;
 
   TransitStop({
     required this.type,
@@ -356,11 +370,10 @@ class TransitStop {
     required this.location,
     required this.products,
     required this.lines,
-    required this.distance,
+    this.distance,
   });
 
   factory TransitStop.fromJson(Map<String, dynamic> json) {
-    // Handle case where lines might be null
     var linesJson = json['lines'];
     List<Line> linesList = [];
 
@@ -383,15 +396,20 @@ class TransitStop {
   }
 
   Map<String, dynamic> toJson() {
-    return {
+    final map = {
       'type': type,
       'id': id,
       'name': name,
       'location': location.toJson(),
       'products': products.toJson(),
       'lines': lines.map((line) => line.toJson()).toList(),
-      'distance': distance,
     };
+
+    if (distance != null) {
+      map['distance'] = distance!;
+    }
+
+    return map;
   }
 }
 

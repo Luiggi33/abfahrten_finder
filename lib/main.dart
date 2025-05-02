@@ -1,7 +1,8 @@
 import 'package:abfahrt_finder/provider/app_settings.dart';
+import 'package:abfahrt_finder/provider/favorites_provider.dart';
 import 'package:abfahrt_finder/provider/loading_provider.dart';
 import 'package:abfahrt_finder/provider/loading_widget.dart';
-import 'package:abfahrt_finder/screens/stops_screen.dart';
+import 'package:abfahrt_finder/screens/main_screen.dart';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -14,10 +15,14 @@ void main() async {
   final settings = AppSettings();
   await settings.loadSettings();
 
+  final favorites = FavoritesProvider();
+  await favorites.loadFavorites();
+
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider.value(value: settings),
+        ChangeNotifierProvider(create: (_) => settings),
+        ChangeNotifierProvider(create: (_) => favorites),
         ChangeNotifierProvider(create: (_) => LoadingProvider()),
       ],
       child: const MyApp(),
@@ -42,6 +47,8 @@ const String defaultDataServer = "VBB";
 const int minDistance = 100;
 const int maxDistance = 500;
 
+const int maxFavorites = 50;
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -56,7 +63,7 @@ class MyApp extends StatelessWidget {
         dragDevices: PointerDeviceKind.values.toSet(),
       ),
       builder: LoadingScreen.init(),
-      home: CloseStops(),
+      home: MainScreen(),
     );
   }
 }
