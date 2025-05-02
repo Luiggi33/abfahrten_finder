@@ -1,3 +1,4 @@
+import 'package:abfahrt_finder/provider/favorites_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:abfahrt_finder/main.dart';
@@ -11,6 +12,7 @@ void main() {
       MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (_) => AppSettings()),
+          ChangeNotifierProvider(create: (_) => FavoritesProvider()),
           ChangeNotifierProvider(create: (_) => LoadingProvider()),
         ],
         child: const MyApp(),
@@ -20,18 +22,22 @@ void main() {
     expect(find.textContaining('Abfahrt Finder'), findsOneWidget);
   });
 
-  testWidgets('Initial state shows instruction message', (WidgetTester tester) async {
+  testWidgets('Check for bottom bar', (WidgetTester tester) async {
     await tester.pumpWidget(
       MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (_) => AppSettings()),
+          ChangeNotifierProvider(create: (_) => FavoritesProvider()),
           ChangeNotifierProvider(create: (_) => LoadingProvider()),
         ],
         child: const MyApp(),
       ),
     );
 
-    expect(find.text('Drücke den Knopf um Stops in der Nähe zu finden'), findsOneWidget);
+    expect(find.byType(BottomNavigationBar), findsOne);
+    expect(find.text('Favorites'), findsOneWidget);
+    expect(find.text('Nearby Stops'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget);
   });
 
   testWidgets('Search button should be visible', (WidgetTester tester) async {
@@ -39,6 +45,7 @@ void main() {
       MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (_) => AppSettings()),
+          ChangeNotifierProvider(create: (_) => FavoritesProvider()),
           ChangeNotifierProvider(create: (_) => LoadingProvider()),
         ],
         child: const MyApp(),
@@ -47,20 +54,5 @@ void main() {
 
     expect(find.byIcon(Icons.search), findsOneWidget);
     expect(find.byTooltip('Search Location'), findsOneWidget);
-  });
-
-  testWidgets('Settings button should be visible', (WidgetTester tester) async {
-    await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (_) => AppSettings()),
-          ChangeNotifierProvider(create: (_) => LoadingProvider()),
-        ],
-        child: const MyApp(),
-      ),
-    );
-
-    expect(find.byIcon(Icons.settings), findsOneWidget);
-    expect(find.byTooltip('Open settings'), findsOneWidget);
   });
 }
