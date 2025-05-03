@@ -34,7 +34,7 @@ void main() {
       ),
     );
 
-    expect(find.byType(BottomNavigationBar), findsOne);
+    expect(find.byType(NavigationBar), findsOne);
     expect(find.text('Favorites'), findsOneWidget);
     expect(find.text('Nearby Stops'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
