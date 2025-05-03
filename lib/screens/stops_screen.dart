@@ -165,6 +165,17 @@ class LazyProductsScreen extends StatelessWidget {
   }
 }
 
+class StopCacheState {
+  static final StopCacheState _instance = StopCacheState._internal();
+  factory StopCacheState() => _instance;
+  StopCacheState._internal();
+
+  bool initialLoad = false;
+  List<TransitStop> cachedStops = [];
+  Position? lastPosition;
+  double? lastHeading;
+}
+
 class CloseStops extends StatefulWidget {
   const CloseStops({super.key});
 
@@ -175,7 +186,7 @@ class CloseStops extends StatefulWidget {
 class _CloseStopsState extends State<CloseStops> {
   List<TransitStop> futureStops = [];
   late Position currentPos;
-  late double? userHeading;
+  late double userHeading;
   late StreamSubscription<CompassEvent> compassEvent;
   late StreamSubscription<Position> positionEvent;
 
@@ -183,8 +194,16 @@ class _CloseStopsState extends State<CloseStops> {
   void initState() {
     super.initState();
     final settings = Provider.of<AppSettings>(context, listen: false);
-    if (settings.loadOnStart) {
+    if (StopCacheState().cachedStops.isNotEmpty && StopCacheState().lastPosition != null && StopCacheState().lastHeading != null) {
+      setState(() {
+        futureStops = StopCacheState().cachedStops;
+        currentPos = StopCacheState().lastPosition!;
+        userHeading = StopCacheState().lastHeading!;
+      });
+    }
+    if (settings.loadOnStart && !StopCacheState().initialLoad) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        StopCacheState().initialLoad = true;
         _fetchStops(context, true).catchError((e) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
@@ -201,21 +220,20 @@ class _CloseStopsState extends State<CloseStops> {
       });
     }
     positionEvent = Geolocator.getPositionStream(
-        locationSettings: LocationSettings(
-          accuracy: LocationAccuracy.high,
-          distanceFilter: 5,
-        )
+      locationSettings: LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 5,
+      )
     ).listen((Position position) {
       setState(() {
         currentPos = position;
+        StopCacheState().lastPosition = currentPos;
       });
     });
     compassEvent = FlutterCompass.events!.listen((CompassEvent event) {
       setState(() {
-        userHeading = event.heading;
-        if (userHeading != null) {
-          userHeading = userHeading! < 0 ? (360 + userHeading!) : userHeading!;
-        }
+        userHeading = event.heading! < 0 ? (360 + event.heading!) : event.heading!;
+        StopCacheState().lastHeading = userHeading;
       });
     });
   }
@@ -256,6 +274,9 @@ class _CloseStopsState extends State<CloseStops> {
       setState(() {
         futureStops = stops;
         currentPos = pos;
+
+        StopCacheState().cachedStops = stops;
+        StopCacheState().lastPosition = pos;
       });
     } catch (error) {
       loadingProvider.setLoad(false);
