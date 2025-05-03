@@ -3,7 +3,7 @@ import 'package:abfahrt_finder/screens/stops_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../provider/app_settings.dart';
+import '../provider/settings_provider.dart';
 
 class FavoriteStationItem implements ListItem {
   final String name;

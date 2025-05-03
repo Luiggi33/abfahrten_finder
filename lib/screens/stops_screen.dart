@@ -9,7 +9,7 @@ import 'package:provider/provider.dart';
 
 import '../data/api_handler.dart';
 import '../main.dart';
-import '../provider/app_settings.dart';
+import '../provider/settings_provider.dart';
 import '../provider/favorites_provider.dart';
 import '../provider/loading_provider.dart';
 import 'departures_screen.dart';

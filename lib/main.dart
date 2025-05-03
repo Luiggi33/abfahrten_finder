@@ -1,4 +1,4 @@
-import 'package:abfahrt_finder/provider/app_settings.dart';
+import 'package:abfahrt_finder/provider/settings_provider.dart';
 import 'package:abfahrt_finder/provider/favorites_provider.dart';
 import 'package:abfahrt_finder/provider/loading_provider.dart';
 import 'package:abfahrt_finder/provider/loading_widget.dart';
