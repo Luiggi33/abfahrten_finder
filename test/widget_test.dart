@@ -2,7 +2,7 @@ import 'package:abfahrt_finder/provider/favorites_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:abfahrt_finder/main.dart';
-import 'package:abfahrt_finder/provider/app_settings.dart';
+import 'package:abfahrt_finder/provider/settings_provider.dart';
 import 'package:abfahrt_finder/provider/loading_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -34,7 +34,7 @@ void main() {
       ),
     );
 
-    expect(find.byType(BottomNavigationBar), findsOne);
+    expect(find.byType(NavigationBar), findsOne);
     expect(find.text('Favorites'), findsOneWidget);
     expect(find.text('Nearby Stops'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);

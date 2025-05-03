@@ -42,16 +42,16 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       body:
       favoriteStops.isEmpty
         ? Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 25.0,
-          ),
-          child: Text(
-            "You didn't mark any stops as your favorite yet",
-            style: TextStyle(fontSize: 20),
-            textAlign: TextAlign.center,
-          ),
-        )
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 25.0,
+            ),
+            child: Text(
+              "You didn't mark any stops as your favorite yet",
+              style: TextStyle(fontSize: 20),
+              textAlign: TextAlign.center,
+            ),
+          )
       )
       : Column(
         children: <Widget>[

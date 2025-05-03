@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../data/api_handler.dart';
 import '../main.dart';
-import '../provider/app_settings.dart';
+import '../provider/settings_provider.dart';
 
 class DeparturesScreen extends StatefulWidget {
   final TransitStop stop;
